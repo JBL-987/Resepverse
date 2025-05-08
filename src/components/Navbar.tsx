@@ -4,30 +4,18 @@ import { truncateAddress } from "../utils/string";
 import { useReadContract } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
 import { IDRX_SEPOLIA } from "../constants";
-import { useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
     <nav className="flex justify-between items-center p-4 border-b z-20 border-gray-600 bg-black">
       <div className="flex items-center">
-        <a href="/" className="text-xl font-bold px-6 text-white">
+        <div className="text-xl font-bold px-6 text-white">
           Telepathia-AI
-        </a>
+        </div>
         <div className="hidden md:flex space-x-6 ml-8">
-          {isAuthenticated && (
-            <a 
-              href="/chat" 
-              className={`text-sm ${location.pathname === '/chat' ? 'text-white' : 'text-gray-400 hover:text-white'} transition-colors`}
-            >
-              Chat
-            </a>
-          )}
         </div>
       </div>
       <div className="md:hidden">
@@ -59,15 +47,6 @@ const Navbar: React.FC = () => {
       {isMenuOpen && (
         <div className="absolute top-16 left-0 right-0 bg-black border-b border-gray-700 md:hidden z-30">
           <div className="flex flex-col px-4 py-2 space-y-2">
-            {isAuthenticated && (
-              <a 
-                href="/chat" 
-                className="py-2 text-gray-400 hover:text-white transition-colors" 
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Chat
-              </a>
-            )}
           </div>
         </div>
       )}

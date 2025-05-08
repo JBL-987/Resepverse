@@ -103,7 +103,7 @@ const Home: React.FC = () => {
   // Event handlers
   const handleChat = () => {
     if (isConnected) {
-      navigate('/login');
+      navigate('/chat');
     } else {
       Swal.fire({
         icon: "error",
