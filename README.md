@@ -1,40 +1,29 @@
-# Crypto Donation Platform
+# Telepathia - AI
 
-Platform donasi berbasis crypto yang memungkinkan pengguna untuk:
+AI-Agent Chatting Platform:
 
-- Melihat berbagai program donasi.
-- Memberikan kontribusi dalam bentuk IDRX.
-- Melihat progres pendanaan dan riwayat withdraw.
-- Admin dapat menambahkan program dan mengelola alokasi dana.
+## 🚀 Ultimate Feature
 
-## 🚀 Fitur Utama
+### Chatting
 
-### Untuk Umum (User)
+For Users:
+View Campaign Banners and Information: Browse through different donation programs and their details.
+See Program Statistics: Get an overview of the total funds collected and the number of active programs.
+Available Programs List: View all available programs and their descriptions.
+Make Contributions: Easily donate funds through a modal.
+Track Fund Usage: Monitor the history of funds used within each program.
 
-- Melihat banner dan informasi campaign.
-- Melihat statistik total dana dan jumlah program.
-- Melihat program yang tersedia dan detailnya.
-- Memberikan kontribusi (modal kontribusi).
-- Lihat riwayat penggunaan dana pada program.
-
-### Untuk Admin
-
-- Tambah program baru.
-- Alokasi dana (withdraw) dari program.
-- Lihat progres dan riwayat transaksi per program.
-
-## 🛠️ Teknologi yang Digunakan
+## 🛠️ Techstack
 
 - **React** (Vite)
 - **TypeScript**
 - **Tailwind CSS**
 - **Zustand** (State Management)
-- **Ether.js** (opsional, jika nanti ingin integrasi blockchain)
+- **Ether.js** (optional, jika nanti ingin integrasi blockchain)
 - **Blockscout** (untuk menampilkan alamat PIC di explorer)
 
 # Instalation and Running React
 
-- clone repo. "git clone https://github.com/danantiri/front-end.git"
-- go to folder "cd front-end"
+- clone repo. "git clone https://github.com/JBL-987/Telepathia-AI.git"
 - install dependencies "npm install"
 - run react "npm run dev"
