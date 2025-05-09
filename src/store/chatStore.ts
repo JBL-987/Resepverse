@@ -55,6 +55,7 @@ interface ChatStore {
   updateContact: (address: string, updates: Partial<Contact>) => void;
   
   createThread: (participants: string[], isGroup?: boolean, groupName?: string) => string;
+  deleteThread: (threadId: string) => void;
   setActiveThread: (threadId: string) => void;
   
   sendMessage: (content: string, receiverAddress: string, isEncrypted?: boolean) => Promise<void>;
@@ -74,27 +75,27 @@ export const useChatStore = create<ChatStore>()(
       activeThreadId: null,
       
       setCurrentUser: (user) => set({ currentUser: user }),
-      updateUserProfile: (updates) => 
+      updateUserProfile: (updates) =>
         set((state) => ({
           currentUser: state.currentUser ? { ...state.currentUser, ...updates } : null
         })),
-      setUserOnlineStatus: (isOnline) => 
+      setUserOnlineStatus: (isOnline) =>
         set((state) => ({
           currentUser: state.currentUser ? { ...state.currentUser, isOnline } : null
         })),
       logout: () => set({ currentUser: null, activeThreadId: null }),
       
-      addContact: (contact) => 
+      addContact: (contact) =>
         set((state) => ({
           contacts: [...state.contacts, contact]
         })),
-      removeContact: (address) => 
+      removeContact: (address) =>
         set((state) => ({
           contacts: state.contacts.filter(c => c.address !== address)
         })),
-      updateContact: (address, updates) => 
+      updateContact: (address, updates) =>
         set((state) => ({
-          contacts: state.contacts.map(c => 
+          contacts: state.contacts.map(c =>
             c.address === address ? { ...c, ...updates } : c
           )
         })),
@@ -118,6 +119,22 @@ export const useChatStore = create<ChatStore>()(
         }));
         return threadId;
       },
+
+      deleteThread: (threadId) => {
+        set((state) => {
+          const filteredThreads = state.threads.filter(t => t.id !== threadId);
+          let newActiveThreadId = state.activeThreadId;
+          if (state.activeThreadId === threadId) {
+            newActiveThreadId = filteredThreads.length > 0 ? filteredThreads[0].id : null;
+          }
+          
+          return {
+            threads: filteredThreads,
+            activeThreadId: newActiveThreadId
+          };
+        });
+      },
+
       setActiveThread: (threadId) => {
         set({ activeThreadId: threadId });
         get().markThreadAsRead(threadId);

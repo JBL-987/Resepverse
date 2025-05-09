@@ -25,7 +25,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const { connectWallet, logout } = useChatStore();
   
-  // Update authentication state when wallet connection changes
   useEffect(() => {
     if (isConnected && address) {
       setIsAuthenticated(true);
@@ -35,9 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isConnected, address, connectWallet]);
   
-  // Connect is handled by XellarKitProvider's modal
   const connect = () => {
-    // This will be triggered by the XellarKitProvider's connect button
   };
   
   const disconnect = () => {

@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useChatStore } from "../../store/chatStore";
 import { useAuth } from "../../contexts/AuthContext";
 
-export const MessageInput: React.FC = () => {
+export const MessageInput = () => {
   const [messageText, setMessageText] = useState("");
   const [isEncrypted, setIsEncrypted] = useState(true);
   const { activeThreadId, threads, sendMessage } = useChatStore();
@@ -42,14 +42,14 @@ export const MessageInput: React.FC = () => {
   }
   
   return (
-    <div className="p-4 border-t border-gray-700">
+    <div className="p-4 border-t border-gray-800 bg-black">
       <div className="flex items-center mb-2">
-        <label className="flex items-center text-sm text-gray-300">
+        <label className="flex items-center text-sm text-gray-400">
           <input
             type="checkbox"
             checked={isEncrypted}
             onChange={(e) => setIsEncrypted(e.target.checked)}
-            className="mr-2"
+            className="mr-2 bg-gray-700 border-gray-600"
           />
           Encrypt message
         </label>
@@ -61,7 +61,7 @@ export const MessageInput: React.FC = () => {
           onChange={(e) => setMessageText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
-          className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-white resize-none"
+          className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-white resize-none"
           rows={2}
         />
         

@@ -1,14 +1,12 @@
-import React from "react";
 import { useChatStore } from "../../store/chatStore";
 import { useAuth } from "../../contexts/AuthContext";
 
-export const Header: React.FC = () => {
+export const Header = () => {
   const { activeThreadId, threads } = useChatStore();
   const { address } = useAuth();
   
   const activeThread = threads.find(thread => thread.id === activeThreadId);
   
-  // Get display name for the thread
   let headerTitle = "Telepathia Chat";
   if (activeThread) {
     if (activeThread.isGroup) {
@@ -22,8 +20,8 @@ export const Header: React.FC = () => {
   }
   
   return (
-    <header className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
-      <h2 className="text-lg font-medium">{headerTitle}</h2>
+    <header className="flex items-center justify-between p-4 border-b border-gray-800 bg-black">
+      <h2 className="text-lg font-medium text-white">{headerTitle}</h2>
       
       {activeThread && !activeThread.isGroup && (
         <div className="text-sm text-gray-400">
@@ -33,3 +31,5 @@ export const Header: React.FC = () => {
     </header>
   );
 };
+
+export default Header;

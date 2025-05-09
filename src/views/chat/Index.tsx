@@ -10,14 +10,12 @@ export const Chat: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>();
   const { setActiveThread, currentUser, syncMessagesFromBlockchain } = useChatStore();
   
-  // Set active thread from URL param if available
   useEffect(() => {
     if (threadId) {
       setActiveThread(threadId);
     }
   }, [threadId, setActiveThread]);
-  
-  // Sync messages when component mounts
+
   useEffect(() => {
     if (currentUser) {
       syncMessagesFromBlockchain();

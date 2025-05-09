@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useChatStore } from "../../store/chatStore";
 import { useAuth } from "../../contexts/AuthContext";
 
-export const MessageList: React.FC = () => {
+export const MessageList = () => {
   const { activeThreadId, threads } = useChatStore();
   const { address } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -20,7 +20,7 @@ export const MessageList: React.FC = () => {
   }
   
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
       {messages.length === 0 ? (
         <p className="text-center text-gray-400 pt-8">
           No messages yet. Start the conversation!
@@ -36,9 +36,9 @@ export const MessageList: React.FC = () => {
             >
               <div
                 className={`max-w-xs sm:max-w-md rounded-lg px-4 py-2 ${
-                  isCurrentUser 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-gray-700 text-white"
+                  isCurrentUser
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-800 text-white"
                 }`}
               >
                 {!isCurrentUser && (

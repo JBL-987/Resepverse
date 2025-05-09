@@ -1,23 +1,59 @@
-import React from "react";
 import { useChatStore } from "../../store/chatStore";
 import { useAuth } from "../../contexts/AuthContext";
+import Swal from "sweetalert2";
+import { TrashIcon } from "lucide-react";
 
-export const ThreadList: React.FC = () => {
-  const { threads, activeThreadId, setActiveThread } = useChatStore();
+export const ThreadList = () => {
+  const { threads, activeThreadId, setActiveThread, deleteThread } = useChatStore();
   const { address } = useAuth();
   
   // Sort threads by last activity (most recent first)
   const sortedThreads = [...threads].sort((a, b) => b.lastActivity - a.lastActivity);
   
+  const handleDeleteThread = (e, threadId: string) => {
+    e.stopPropagation(); // Prevent triggering the thread selection
+    
+    Swal.fire({
+      title: 'Delete Conversation',
+      text: 'Are you sure you want to delete this conversation?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      customClass: {
+        popup: 'border border-gray-700',
+        confirmButton: 'px-4 py-2 rounded',
+        cancelButton: 'px-4 py-2 rounded'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteThread(threadId);
+        Swal.fire({
+          title: 'Deleted!',
+          text: 'Conversation has been deleted.',
+          icon: 'success',
+          background: '#1a1a1a',
+          color: '#fff',
+          customClass: {
+            popup: 'border border-gray-700'
+          },
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    });
+  };
+
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-medium">Conversations</h2>
+    <div className="h-full overflow-y-auto bg-black">
+      <div className="p-4 border-b border-gray-800">
+        <h2 className="text-lg font-medium text-white">Conversations</h2>
       </div>
       
       <div>
         {sortedThreads.length === 0 ? (
-          <p className="text-gray-400 text-center p-4">No conversations yet</p>
+          <p className="text-gray-500 text-center p-4">No conversations yet</p>
         ) : (
           sortedThreads.map((thread) => {
             const isActive = thread.id === activeThreadId;
@@ -36,18 +72,27 @@ export const ThreadList: React.FC = () => {
             return (
               <div
                 key={thread.id}
-                className={`p-4 border-b border-gray-700 cursor-pointer ${
-                  isActive ? "bg-gray-700" : "hover:bg-gray-700"
+                className={`p-4 border-b border-gray-800 cursor-pointer ${
+                  isActive ? "bg-gray-800" : "hover:bg-gray-800"
                 }`}
                 onClick={() => setActiveThread(thread.id)}
               >
                 <div className="flex justify-between items-center">
-                  <div className="font-medium">{displayName}</div>
-                  {thread.unreadCount > 0 && (
-                    <div className="px-2 py-1 text-xs bg-blue-600 rounded-full">
-                      {thread.unreadCount}
-                    </div>
-                  )}
+                  <div className="font-medium text-white">{displayName}</div>
+                  <div className="flex items-center gap-2">
+                    {thread.unreadCount > 0 && (
+                      <div className="px-2 py-1 text-xs bg-blue-600 rounded-full text-white">
+                        {thread.unreadCount}
+                      </div>
+                    )}
+                    <button 
+                      className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-700 transition-colors"
+                      onClick={(e) => handleDeleteThread(e, thread.id)}
+                      title="Delete conversation"
+                    >
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
                 </div>
                 
                 {lastMessage && (
