@@ -4,12 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { XellarKitProvider, darkTheme, defaultConfig } from "@xellar/kit";
 import { liskSepolia } from "viem/chains";
 
-const walletConnectProjectId = "0164f6aefa91d65fe12adcfeebadf92b";
+const walletConnectProjectId = import.meta.env.VITE_XELLAR_PROJECT_ID;
 
 export const config = defaultConfig({
   appName: "Telepathia-AI",
   walletConnectProjectId,
-  xellarAppId: "785a2320-01af-436f-8a38-eead24d35b47",
+  xellarAppId: import.meta.env.VITE_XELLAR_APP_ID,
   xellarEnv: "sandbox",
   chains: [liskSepolia],
 }) as Config;
