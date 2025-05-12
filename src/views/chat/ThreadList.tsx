@@ -6,13 +6,10 @@ import { TrashIcon } from "lucide-react";
 export const ThreadList = () => {
   const { threads, activeThreadId, setActiveThread, deleteThread } = useChatStore();
   const { address } = useAuth();
-  
-  // Sort threads by last activity (most recent first)
   const sortedThreads = [...threads].sort((a, b) => b.lastActivity - a.lastActivity);
   
   const handleDeleteThread = (e, threadId: string) => {
-    e.stopPropagation(); // Prevent triggering the thread selection
-    
+    e.stopPropagation(); 
     Swal.fire({
       title: 'Delete Conversation',
       text: 'Are you sure you want to delete this conversation?',
@@ -57,8 +54,6 @@ export const ThreadList = () => {
         ) : (
           sortedThreads.map((thread) => {
             const isActive = thread.id === activeThreadId;
-            
-            // Get display name for the thread
             let displayName = thread.groupName || "Group Chat";
             if (!thread.isGroup) {
               const otherParticipant = thread.participants.find(p => p !== address);

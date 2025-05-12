@@ -7,8 +7,6 @@ export const ContactList = () => {
     contacts, 
     addContact, 
     removeContact, 
-    createThread, 
-    setActiveThread, 
     currentUser, 
   } = useChatStore();
   

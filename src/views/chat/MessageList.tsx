@@ -10,7 +10,6 @@ export const MessageList = () => {
   const activeThread = threads.find(thread => thread.id === activeThreadId);
   const messages = activeThread?.messages || [];
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);

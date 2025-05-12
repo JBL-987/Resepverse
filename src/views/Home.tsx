@@ -109,6 +109,8 @@ const Home: React.FC = () => {
         icon: "error",
         title: "Wallet Not Connected",
         text: "Please connect your wallet first!",
+        background: '#1a1a1a',
+        color: '#fff',
       });
     }
   };

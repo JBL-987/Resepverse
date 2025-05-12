@@ -12,13 +12,10 @@ export const MessageInput = () => {
   
   const handleSendMessage = async () => {
     if (!messageText.trim() || !activeThread || !address) return;
-    
-    // For direct messages, find the other participant
     let receiverAddress = "";
     if (!activeThread.isGroup) {
       receiverAddress = activeThread.participants.find(p => p !== address) || "";
     } else {
-      // For group chats, we'll use thread ID as receiver
       receiverAddress = activeThread.id;
     }
     
