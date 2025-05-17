@@ -10,6 +10,7 @@ import {
   createSimulatedAgentThread,
   simulateAgentConversation,
 } from "../../services/agentSimulationService";
+import { motion } from "framer-motion";
 
 export const Chat: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>();
@@ -125,13 +126,13 @@ export const Chat: React.FC = () => {
           <div className="flex items-center">
             <span className="mr-2 text-sm font-medium">AI Agent</span>
             <button
-              className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none ${
+              className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-black ${
                 useAgentView ? "bg-indigo-600" : "bg-gray-600"
               }`}
               onClick={() => enableAgent(!useAgentView)}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ease-in-out shadow-sm ${
                   useAgentView ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -140,13 +141,23 @@ export const Chat: React.FC = () => {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-72 border-r border-[#2b3b4c] bg-[#1e2c3a]">
+          <motion.div 
+            initial={{ width: "72px", opacity: 0.5 }}
+            animate={{ width: "18rem", opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="border-r border-[#2b3b4c] bg-[#1e2c3a]"
+          >
             <ThreadList />
-          </div>
+          </motion.div>
 
-          <div className="flex-1 bg-[#0e1621]">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="flex-1 bg-[#0e1621]"
+          >
             {useAgentView ? <AgentMessagePanel /> : <MessagePanel />}
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

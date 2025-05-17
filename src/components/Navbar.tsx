@@ -68,8 +68,15 @@ const ConnectedButton: React.FC<{ address: Address; onClick: () => void }> = ({ 
   const formatted = formatUnits(data ?? BigInt(0), 2);
   
   return (
-    <button className="bg-red-700 text-white px-4 py-2 rounded-lg cursor-pointer" onClick={onClick}>
-      {truncateAddress(address ?? "")} - {Number(formatted).toLocaleString()} IDRX
+    <button 
+      className="bg-gradient-to-r from-indigo-700 to-red-700 text-white px-4 py-2 rounded-lg cursor-pointer hover:from-indigo-800 hover:to-red-800 transition-all shadow-md flex items-center gap-2" 
+      onClick={onClick}
+    >
+      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+      <span>{truncateAddress(address ?? "")}</span>
+      <span className="px-2 py-0.5 bg-black/30 rounded text-sm">
+        {Number(formatted).toLocaleString()} IDRX
+      </span>
     </button>
   );
 };

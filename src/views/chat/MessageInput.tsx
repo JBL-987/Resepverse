@@ -1,17 +1,34 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChatStore } from "../../store/chatStore";
 import { useAuth } from "../../contexts/AuthContext";
+import { motion } from "framer-motion";
+import { Send, Lock, Unlock, Image, Paperclip, Smile, Mic } from "lucide-react";
 
 export const MessageInput = () => {
   const [messageText, setMessageText] = useState("");
   const [isEncrypted, setIsEncrypted] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const { activeThreadId, threads, sendMessage } = useChatStore();
   const { address } = useAuth();
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId);
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      setIsExpanded(textareaRef.current.scrollHeight > 50);
+    }
+  }, [messageText]);
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || !activeThread || !address) return;
+
     let receiverAddress = "";
     if (!activeThread.isGroup) {
       receiverAddress =
@@ -21,10 +38,17 @@ export const MessageInput = () => {
     }
 
     try {
+      setIsLoading(true);
       await sendMessage(messageText, receiverAddress, isEncrypted);
       setMessageText("");
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+      setIsExpanded(false);
     } catch (error) {
       console.error("Failed to send message:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,96 +65,101 @@ export const MessageInput = () => {
 
   return (
     <div className="p-4 border-t border-[#2b3b4c] bg-[#0e1621]">
-      <div className="flex items-center mb-2 justify-between">
-        <label className="flex items-center text-sm text-gray-400">
-          <div className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none bg-[#1e2c3a]">
-            <input
-              type="checkbox"
-              checked={isEncrypted}
-              onChange={(e) => setIsEncrypted(e.target.checked)}
-              className="sr-only"
-            />
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full transition-transform ${
-                isEncrypted
-                  ? "translate-x-4 bg-indigo-600"
-                  : "translate-x-1 bg-gray-500"
-              }`}
-            />
-          </div>
-          <span className="ml-2 text-xs font-medium">Encrypt message</span>
-        </label>
-
-        <div className="flex space-x-2">
-          <button className="w-8 h-8 rounded-full bg-[#1e2c3a] flex items-center justify-center hover:bg-[#2b3b4c] transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 text-gray-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
+      {/* Message tools */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{
+          opacity: isFocused || isExpanded ? 1 : 0.7,
+          y: 0,
+          height: isFocused || isExpanded ? 'auto' : 0,
+          marginBottom: isFocused || isExpanded ? 12 : 0
+        }}
+        transition={{ duration: 0.2 }}
+        className="flex items-center justify-between overflow-hidden"
+      >
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => setIsEncrypted(!isEncrypted)}
+            className={`p-2 rounded-full transition-colors ${isEncrypted ? 'text-indigo-400 hover:bg-indigo-600/10' : 'text-gray-400 hover:bg-gray-700/30'}`}
+            title={isEncrypted ? "Encrypted message" : "Unencrypted message"}
+          >
+            {isEncrypted ? <Lock size={16} /> : <Unlock size={16} />}
           </button>
-          <button className="w-8 h-8 rounded-full bg-[#1e2c3a] flex items-center justify-center hover:bg-[#2b3b4c] transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 text-gray-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
+
+          <span className="text-xs font-medium text-gray-400 ml-1">
+            {isEncrypted ? "Encrypted" : "Unencrypted"}
+          </span>
+        </div>
+
+        <div className="flex space-x-1">
+          <button
+            className="p-2 rounded-full text-gray-400 hover:text-gray-200 hover:bg-gray-700/30 transition-colors"
+            title="Attach file"
+          >
+            <Paperclip size={16} />
+          </button>
+          <button
+            className="p-2 rounded-full text-gray-400 hover:text-gray-200 hover:bg-gray-700/30 transition-colors"
+            title="Send image"
+          >
+            <Image size={16} />
+          </button>
+          <button
+            className="p-2 rounded-full text-gray-400 hover:text-gray-200 hover:bg-gray-700/30 transition-colors"
+            title="Voice message"
+          >
+            <Mic size={16} />
+          </button>
+          <button
+            className="p-2 rounded-full text-gray-400 hover:text-gray-200 hover:bg-gray-700/30 transition-colors"
+            title="Emoji"
+          >
+            <Smile size={16} />
           </button>
         </div>
-      </div>
+      </motion.div>
 
+      {/* Message input */}
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder="Type a message..."
-          className="w-full px-4 py-3 bg-[#1e2c3a] border border-[#2b3b4c] rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white resize-none"
-          rows={1}
-          style={{ minHeight: "44px", maxHeight: "120px" }}
+          className="w-full px-4 py-3 pr-12 bg-[#1e2c3a] border border-[#2b3b4c] rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white resize-none transition-all"
+          style={{ minHeight: "50px" }}
         />
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleSendMessage}
-          disabled={!messageText.trim()}
-          className={`absolute right-2 bottom-2 p-2 rounded-full ${
-            !messageText.trim()
+          disabled={!messageText.trim() || isLoading}
+          className={`absolute right-3 bottom-3 p-2 rounded-full ${
+            !messageText.trim() || isLoading
               ? "bg-[#2b3b4c] text-gray-500 cursor-not-allowed"
-              : "bg-indigo-600 text-white hover:bg-indigo-700"
-          } transition-colors focus:outline-none`}
+              : "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:shadow-md hover:from-indigo-500 hover:to-indigo-600"
+          } transition-all focus:outline-none`}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Send size={18} className="text-white" />
+          )}
+        </motion.button>
       </div>
+
+      {/* Character count - only show when approaching limit */}
+      {messageText.length > 200 && (
+        <div className="mt-2 text-xs text-right">
+          <span className={messageText.length > 500 ? "text-red-400" : "text-gray-400"}>
+            {messageText.length}/1000
+          </span>
+        </div>
+      )}
     </div>
   );
 };
