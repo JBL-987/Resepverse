@@ -1,19 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ConnectButton } from "@xellar/kit";
 import { truncateAddress } from "../utils/string";
 import { useReadContract } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
 import { IDRX_SEPOLIA } from "../constants";
+import { useNavigate } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const navigate = useNavigate();
 
   return (
     <nav className="flex justify-between items-center p-4 border-b z-20 border-gray-600 bg-black">
       <div className="flex items-center">
         <div className="text-xl font-bold px-6 text-white">
-          Telepathia-AI
+          Resepverse
         </div>
         <div className="hidden md:flex space-x-6 ml-8">
         </div>
@@ -32,6 +34,12 @@ const Navbar: React.FC = () => {
 
       <ConnectButton.Custom>
         {({ openConnectModal, isConnected, openProfileModal, account }) => {
+          useEffect(() => {
+            if (!isConnected) {
+              navigate("/");
+            }
+          }, [isConnected, navigate]);
+
           if (!isConnected) {
             return (
               <button className="bg-white text-black px-4 py-2 rounded-lg cursor-pointer" onClick={openConnectModal}>

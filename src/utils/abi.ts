@@ -1,246 +1,43 @@
-export const telepathiaABI = [
+export const recipeContractABI = [
   {
-    inputs: [{ internalType: "address", name: "_tokenAddress", type: "address" }],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "sender", type: "address" },
-      { indexed: true, internalType: "address", name: "receiver", type: "address" },
-      { indexed: false, internalType: "uint256", name: "messageId", type: "uint256" },
-      { indexed: false, internalType: "string", name: "encryptedContent", type: "string" },
-      { indexed: false, internalType: "uint256", name: "timestamp", type: "uint256" },
+    "inputs": [
+      { "internalType": "string", "name": "title", "type": "string" },
+      { "internalType": "string", "name": "description", "type": "string" },
+      { "internalType": "string", "name": "imageUrl", "type": "string" }
     ],
-    name: "MessageSent",
-    type: "event",
+    "name": "submitRecipe",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "user", type: "address" },
-      { indexed: false, internalType: "string", name: "username", type: "string" },
-      { indexed: false, internalType: "string", name: "publicKey", type: "string" },
-    ],
-    name: "UserRegistered",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "creator", type: "address" },
-      { indexed: false, internalType: "uint256", name: "threadId", type: "uint256" },
-      { indexed: false, internalType: "string", name: "name", type: "string" },
-      { indexed: false, internalType: "bool", name: "isGroup", type: "bool" },
-    ],
-    name: "ThreadCreated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "uint256", name: "threadId", type: "uint256" },
-      { indexed: true, internalType: "address", name: "participant", type: "address" },
-    ],
-    name: "ThreadJoined",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "uint256", name: "messageId", type: "uint256" },
-      { indexed: true, internalType: "address", name: "reader", type: "address" },
-      { indexed: false, internalType: "uint256", name: "timestamp", type: "uint256" },
-    ],
-    name: "MessageRead",
-    type: "event",
-  },
-  {
-    inputs: [
-      { internalType: "string", name: "_username", type: "string" },
-      { internalType: "string", name: "_publicKey", type: "string" },
-    ],
-    name: "registerUser",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_receiver", type: "address" },
-      { internalType: "string", name: "_encryptedContent", type: "string" },
-    ],
-    name: "sendDirectMessage",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "string", name: "_name", type: "string" },
-      { internalType: "bool", name: "_isGroup", type: "bool" },
-      { internalType: "address[]", name: "_initialParticipants", type: "address[]" },
-    ],
-    name: "createThread",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "_threadId", type: "uint256" },
-      { internalType: "string", name: "_encryptedContent", type: "string" },
-    ],
-    name: "sendThreadMessage",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "_threadId", type: "uint256" }],
-    name: "joinThread",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "_messageId", type: "uint256" }],
-    name: "markMessageAsRead",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "_userAddress", type: "address" }],
-    name: "getUserProfile",
-    outputs: [
+    "inputs": [],
+    "name": "getAllRecipes",
+    "outputs": [
       {
-        components: [
-          { internalType: "string", name: "username", type: "string" },
-          { internalType: "string", name: "publicKey", type: "string" },
-          { internalType: "uint256", name: "lastSeen", type: "uint256" },
-          { internalType: "bool", name: "isRegistered", type: "bool" },
+        "components": [
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "string", "name": "title", "type": "string" },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "imageUrl", "type": "string" },
+          { "internalType": "address", "name": "creator", "type": "address" },
+          { "internalType": "uint256", "name": "votes", "type": "uint256" }
         ],
-        internalType: "struct Telepathia.UserProfile",
-        name: "",
-        type: "tuple",
-      },
+        "internalType": "struct Recipe[]",
+        "name": "",
+        "type": "tuple[]"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [{ internalType: "address", name: "_userAddress", type: "address" }],
-    name: "getUserThreads",
-    outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "_threadId", type: "uint256" }],
-    name: "getThreadInfo",
-    outputs: [
-      {
-        components: [
-          { internalType: "uint256", name: "id", type: "uint256" },
-          { internalType: "string", name: "name", type: "string" },
-          { internalType: "address", name: "creator", type: "address" },
-          { internalType: "bool", name: "isGroup", type: "bool" },
-          { internalType: "uint256", name: "createdAt", type: "uint256" },
-          { internalType: "address[]", name: "participants", type: "address[]" },
-        ],
-        internalType: "struct Telepathia.Thread",
-        name: "",
-        type: "tuple",
-      },
+    "inputs": [
+      { "internalType": "uint256", "name": "recipeId", "type": "uint256" }
     ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "_threadId", type: "uint256" },
-      { internalType: "uint256", name: "_fromIndex", type: "uint256" },
-      { internalType: "uint256", name: "_count", type: "uint256" },
-    ],
-    name: "getThreadMessages",
-    outputs: [
-      {
-        components: [
-          { internalType: "uint256", name: "id", type: "uint256" },
-          { internalType: "address", name: "sender", type: "address" },
-          { internalType: "string", name: "encryptedContent", type: "string" },
-          { internalType: "uint256", name: "timestamp", type: "uint256" },
-          { internalType: "address[]", name: "readBy", type: "address[]" },
-        ],
-        internalType: "struct Telepathia.Message[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_user1", type: "address" },
-      { internalType: "address", name: "_user2", type: "address" },
-      { internalType: "uint256", name: "_fromIndex", type: "uint256" },
-      { internalType: "uint256", name: "_count", type: "uint256" },
-    ],
-    name: "getDirectMessages",
-    outputs: [
-      {
-        components: [
-          { internalType: "uint256", name: "id", type: "uint256" },
-          { internalType: "address", name: "sender", type: "address" },
-          { internalType: "address", name: "receiver", type: "address" },
-          { internalType: "string", name: "encryptedContent", type: "string" },
-          { internalType: "uint256", name: "timestamp", type: "uint256" },
-          { internalType: "bool", name: "isRead", type: "bool" },
-        ],
-        internalType: "struct Telepathia.DirectMessage[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "_userAddress", type: "address" }],
-    name: "getUnreadMessageCount",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "updateLastSeen",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "string", name: "_newPublicKey", type: "string" }],
-    name: "updatePublicKey",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "owner",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "tokenContract",
-    outputs: [{ internalType: "contract IERC20", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
+    "name": "voteRecipe",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;

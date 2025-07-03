@@ -7,7 +7,7 @@ import { liskSepolia } from "viem/chains";
 const walletConnectProjectId = import.meta.env.VITE_XELLAR_PROJECT_ID;
 
 export const config = defaultConfig({
-  appName: "Telepathia-AI",
+  appName: "Resepverse",
   walletConnectProjectId,
   xellarAppId: import.meta.env.VITE_XELLAR_APP_ID,
   xellarEnv: "sandbox",

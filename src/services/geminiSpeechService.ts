@@ -5,7 +5,7 @@
  */
 
 // API configuration
-const API_KEY = "AIzaSyCY9eyAXjXvqww9AVNw7ObdGT-SUaXZXAs";
+const API_KEY = "your-api-key";
 const MODEL = "gemini-2.0-flash-live-001";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
 

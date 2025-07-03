@@ -1,4 +1,4 @@
-# Telepathia - AI
+# Resepverse
 
 AI-Agent Chatting Platform:
 
@@ -24,6 +24,6 @@ Track Fund Usage: Monitor the history of funds used within each program.
 
 # Instalation and Running React
 
-- clone repo. "git clone https://github.com/JBL-987/Telepathia-AI.git"
+- clone repo. "git clone https://github.com/JBL-987/Resepverse.git"
 - install dependencies "npm install"
 - run react "npm run dev"

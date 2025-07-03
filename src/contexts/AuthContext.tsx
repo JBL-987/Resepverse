@@ -1,56 +1,26 @@
-import React, { createContext, useContext, ReactNode, useState, useEffect } from "react";
-import { useAccount, useDisconnect } from "wagmi";
-import { useChatStore } from "../store/chatStore";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useAccount } from "wagmi";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  connect: () => void;
-  disconnect: () => void;
-  address: string | undefined;
+  address?: string;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  connect: () => {},
-  disconnect: () => {},
-  address: undefined
-});
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext<AuthContextType>({ isAuthenticated: false });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { address, isConnected } = useAccount();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { isConnected, address } = useAccount();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  const { connectWallet, logout } = useChatStore();
-  
+
   useEffect(() => {
-    if (isConnected && address) {
-      setIsAuthenticated(true);
-      connectWallet(address);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, [isConnected, address, connectWallet]);
-  
-  const connect = () => {
-  };
-  
-  const disconnect = () => {
-    wagmiDisconnect();
-    logout();
-    setIsAuthenticated(false);
-  };
-  
+    setIsAuthenticated(isConnected);
+  }, [isConnected]);
+
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated,
-      connect,
-      disconnect,
-      address
-    }}>
+    <AuthContext.Provider value={{ isAuthenticated, address }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext); 

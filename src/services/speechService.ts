@@ -1,7 +1,7 @@
 /**
- * Speech Service for Telepathia AI
+ * Speech Service untuk Resepverse
  *
- * This service handles voice input and output using the Web Speech API.
+ * Service ini menangani input dan output suara menggunakan Web Speech API.
  */
 
 // Types for speech recognition
