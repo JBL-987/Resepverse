@@ -1,24 +1,32 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import Home from "./views/Home";
-import RecipeListPage from "./pages/RecipeListPage";
-import SubmitRecipePage from "./pages/SubmitRecipePage";
-import NotFound from "./views/NotFound";
 
-const App: React.FC = () => {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import BecomeChef from "./pages/BecomeChef";
+import NFTMinting from "./pages/NFTMinting";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/recipes" element={<RecipeListPage />} />
-          <Route path="/submit" element={<SubmitRecipePage />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/become-chef" element={<BecomeChef />} />
+          <Route path="/nft-minting" element={<NFTMinting />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  );
-};
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
