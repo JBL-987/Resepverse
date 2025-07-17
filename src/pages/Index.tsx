@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import WorldMap from '@/components/WorldMap';
@@ -7,60 +7,16 @@ import ChefProfile from '@/components/ChefProfile';
 import NFTMintingModal from '@/components/NFTMintingModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useRecipeStore } from '@/store/recipestore';
 
 const Index = () => {
   const [showMintModal, setShowMintModal] = useState(false);
+  const { recipes, fetchRecipes, isLoading } = useRecipeStore();
 
-  const featuredRecipes = [
-    {
-      title: "Authentic Italian Carbonara",
-      chef: "Marco Romano",
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400",
-      rating: 4.9,
-      cookTime: "20 min",
-      difficulty: "Medium",
-      isNFT: true,
-      price: "0.5 LSK"
-    },
-    {
-      title: "Japanese Ramen Bowl",
-      chef: "Yuki Tanaka",
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400",
-      rating: 4.7,
-      cookTime: "45 min",
-      difficulty: "Hard"
-    },
-    {
-      title: "Thai Pad Thai Special",
-      chef: "Siriporn Chen",
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400",
-      rating: 4.8,
-      cookTime: "25 min",
-      difficulty: "Easy",
-      isNFT: true,
-      price: "0.3 LSK"
-    }
-  ];
+  useEffect(() => {
+    fetchRecipes();
+  }, [fetchRecipes]);
 
-  const featuredChefs = [
-    {
-      name: "Elena Rodriguez",
-      avatar: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400",
-      rating: 4.9,
-      specialties: ["Mexican", "Fusion", "Vegan"],
-      location: "Mexico City",
-      isLive: true,
-      topDishes: ["Tacos al Pastor", "Mole Poblano", "Ceviche"]
-    },
-    {
-      name: "Pierre Dubois",
-      avatar: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400",
-      rating: 4.8,
-      specialties: ["French", "Pastry", "Wine Pairing"],
-      location: "Paris",
-      topDishes: ["Coq au Vin", "Bouillabaisse", "Crème Brûlée"]
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
@@ -101,25 +57,22 @@ const Index = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredRecipes.map((recipe, index) => (
-            <RecipeCard key={index} {...recipe} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="h-48 rounded-lg bg-gray-200"></div>
+                  <div className="mt-4 h-6 rounded bg-gray-200"></div>
+                  <div className="mt-2 h-4 rounded bg-gray-200 w-1/2"></div>
+                </div>
+              ))
+            : recipes
+                .slice(0, 3)
+                .map((recipe) => (
+                  <RecipeCard key={recipe.id} recipe={recipe} />
+                ))}
         </div>
       </section>
 
-      {/* Featured Chefs */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold">Master Chefs</h2>
-          <Badge variant="secondary">Available Now</Badge>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredChefs.map((chef, index) => (
-            <ChefProfile key={index} {...chef} />
-          ))}
-        </div>
-      </section>
 
       {/* Tokenomics Section */}
       <section className="container mx-auto px-4 py-12">

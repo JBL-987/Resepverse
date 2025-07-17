@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import BecomeChef from "./pages/BecomeChef";
 import NFTMinting from "./pages/NFTMinting";
 import NotFound from "./pages/NotFound";
+import RecipeDetailPage from "./pages/recipe-detail-page";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/become-chef" element={<BecomeChef />} />
           <Route path="/nft-minting" element={<NFTMinting />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/recipe/:id" element={<RecipeDetailPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Upload, Star, Clock, Coins, Award, Image, FileText } from 'lucide-react';
 import Header from '@/components/Header';
@@ -39,30 +38,6 @@ const NFTMinting = () => {
   const categories = [
     'Italian', 'Asian', 'Mexican', 'French', 'Indian', 'Mediterranean', 
     'American', 'Japanese', 'Thai', 'Chinese', 'Korean', 'Other'
-  ];
-
-  const featuredNFTs = [
-    {
-      title: "Grandma's Secret Carbonara",
-      price: "0.8 LSK",
-      creator: "Chef Marco",
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
-      sales: 23
-    },
-    {
-      title: "Authentic Ramen Recipe",
-      price: "1.2 LSK",
-      creator: "Chef Yuki",
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
-      sales: 15
-    },
-    {
-      title: "Perfect Tacos al Pastor",
-      price: "0.6 LSK",
-      creator: "Chef Elena",
-      image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300",
-      sales: 31
-    }
   ];
 
   return (
@@ -297,23 +272,6 @@ const NFTMinting = () => {
                 <CardTitle className="text-lg">🔥 Top Selling Recipe NFTs</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {featuredNFTs.map((nft, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-accent/30 rounded-lg">
-                    <img 
-                      src={nft.image} 
-                      alt={nft.title}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{nft.title}</p>
-                      <p className="text-xs text-muted-foreground">by {nft.creator}</p>
-                      <div className="flex items-center justify-between mt-1">
-                        <Badge variant="secondary" className="text-xs">{nft.price}</Badge>
-                        <span className="text-xs text-muted-foreground">{nft.sales} sales</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </CardContent>
             </Card>
 
