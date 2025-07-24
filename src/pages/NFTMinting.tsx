@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Upload, Star, Clock, Coins, Award, Image, FileText } from 'lucide-react';
 import Header from '@/components/Header';
+import { useWriteContract, useAccount, usePublicClient } from 'wagmi';
+import { parseEther, parseEventLogs } from 'viem';
+import { useToast } from '@/components/ui/use-toast';
+import RecipeBook from "./../../smartcontract/artifacts/contracts/RecipeBook.sol/RecipeBook.json";
+import { RECIPE_BOOK_ADDRESS } from '@/constants';
+
 
 const NFTMinting = () => {
   const [mintData, setMintData] = useState({
@@ -21,6 +26,10 @@ const NFTMinting = () => {
     ingredients: '',
     instructions: ''
   });
+  const { toast } = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const { address: account, chain } = useAccount();
+  const publicClient = usePublicClient();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setMintData({
@@ -29,10 +38,61 @@ const NFTMinting = () => {
     });
   };
 
-  const handleMint = (e: React.FormEvent) => {
+  const handleMint = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Minting NFT Recipe:', mintData);
-    // Here would be the smart contract integration
+    
+    try {
+        const submitTxHash = await writeContractAsync({
+            abi: RecipeBook.abi,
+            address: RECIPE_BOOK_ADDRESS,
+            functionName: 'submitRecipe',
+            args: [
+                mintData.title,
+                JSON.stringify(mintData.ingredients.split('\n')),
+                JSON.stringify(mintData.instructions.split('\n')),
+                "https://via.placeholder.com/150" // Placeholder image
+            ],
+            account,
+            chain,
+        });
+
+        const transactionReceipt = await publicClient.waitForTransactionReceipt({ hash: submitTxHash });
+        const logs = parseEventLogs({
+            abi: RecipeBook.abi,
+            logs: transactionReceipt.logs,
+            eventName: 'RecipeSubmitted'
+        });
+        const recipeId = (logs[0] as any).args.recipeId;
+
+        const mintPrice = parseEther(mintData.price);
+        await writeContractAsync({
+            abi: RecipeBook.abi,
+            address: RECIPE_BOOK_ADDRESS,
+            functionName: 'mintRecipeNFT',
+            args: [
+                recipeId,
+                mintPrice,
+                mintData.royalty,
+                mintData.description,
+                `https://example.com/nft/${recipeId}`, // Placeholder token URI
+            ],
+            value: mintPrice,
+            account,
+            chain,
+        });
+
+      toast({
+        title: "Success",
+        description: "Your recipe has been minted as an NFT!",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "There was an error minting your recipe.",
+        variant: "destructive",
+      });
+    }
   };
 
   const categories = [

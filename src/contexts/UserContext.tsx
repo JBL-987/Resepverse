@@ -46,33 +46,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const { address, isConnected } = useAccount();
   
   // Recipe store
-  const { 
-    userReputation, 
-    setWalletAddress, 
-    updateConnectionStatus,
-    refreshUserData: refreshStoreData
-  } = useRecipeStore();
+  const { fetchRecipes } = useRecipeStore();
 
   // Initialize user when wallet connects
   useEffect(() => {
     if (isConnected && address) {
       initializeUser(address);
-      setWalletAddress(address);
-      updateConnectionStatus(true);
     } else {
       setUser(null);
-      setWalletAddress(null);
-      updateConnectionStatus(false);
     }
     setLoading(false);
-  }, [isConnected, address, setWalletAddress, updateConnectionStatus]);
-
-  // Update user reputation when store updates
-  useEffect(() => {
-    if (user && userReputation !== user.reputation) {
-      setUser(prev => prev ? { ...prev, reputation: userReputation } : null);
-    }
-  }, [userReputation, user]);
+  }, [isConnected, address]);
 
   // Initialize user profile
   const initializeUser = (walletAddress: string) => {
@@ -149,7 +133,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setError(null);
       
       // Refresh store data which will update reputation
-      await refreshStoreData();
+      await fetchRecipes();
       
       // You can add more blockchain data fetching here
       // For example: recipes created count, votes received, etc.

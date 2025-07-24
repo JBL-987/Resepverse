@@ -9,6 +9,8 @@ import BecomeChef from "./pages/BecomeChef";
 import NFTMinting from "./pages/NFTMinting";
 import NotFound from "./pages/NotFound";
 import RecipeDetailPage from "./pages/recipe-detail-page";
+import MyNfts from "./pages/MyNfts";
+import Marketplace from "./pages/Marketplace";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/become-chef" element={<BecomeChef />} />
           <Route path="/nft-minting" element={<NFTMinting />} />
+          <Route path="/my-nfts" element={<MyNfts />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/recipe/:id" element={<RecipeDetailPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

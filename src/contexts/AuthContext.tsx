@@ -1,6 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useAccount, useDisconnect, useConnect } from "wagmi";
-import { useRecipeStore } from "../store/recipestore";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -28,22 +27,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { connect: wagmiConnect, connectors, isPending } = useConnect();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Get store actions
-  const { setWalletAddress, updateConnectionStatus, disconnectWallet } = useRecipeStore();
 
   useEffect(() => {
     if (isConnected && address) {
       setIsAuthenticated(true);
-      setWalletAddress(address);
-      updateConnectionStatus(true);
       setError(null);
     } else {
       setIsAuthenticated(false);
-      setWalletAddress(null);
-      updateConnectionStatus(false);
     }
-  }, [isConnected, address, setWalletAddress, updateConnectionStatus]);
+  }, [isConnected, address]);
 
   const connect = async () => {
     try {
@@ -64,7 +56,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const disconnect = () => {
     try {
       wagmiDisconnect();
-      disconnectWallet();
       setIsAuthenticated(false);
       setError(null);
     } catch (err) {

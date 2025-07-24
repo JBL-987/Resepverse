@@ -3,9 +3,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Star, Clock, User } from 'lucide-react';
+import { Star, Clock, User, ThumbsUp } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 import { Link } from 'react-router-dom';
+import { useWriteContract, useAccount } from 'wagmi';
+import { useToast } from './ui/use-toast';
+import RecipeBook from "./../../smartcontract/artifacts/contracts/RecipeBook.sol/RecipeBook.json";
+import { RECIPE_BOOK_ADDRESS } from '@/constants';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -13,6 +17,33 @@ interface RecipeCardProps {
 
 const RecipeCard = ({ recipe }: RecipeCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { toast } = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const { address: account, chain } = useAccount();
+
+  const handleVote = async () => {
+    try {
+      await writeContractAsync({
+        abi: RecipeBook.abi,
+        address: RECIPE_BOOK_ADDRESS,
+        functionName: 'voteRecipe',
+        args: [recipe.id],
+        account,
+        chain,
+      });
+      toast({
+        title: "Success",
+        description: "You have successfully voted for this recipe!",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "You have already voted for this recipe.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card
@@ -65,6 +96,9 @@ const RecipeCard = ({ recipe }: RecipeCardProps) => {
             View Recipe
           </Button>
         </Link>
+        <Button variant="outline" size="icon" onClick={handleVote}>
+          <ThumbsUp className="h-4 w-4" />
+        </Button>
       </CardFooter>
     </Card>
   );

@@ -4,7 +4,6 @@ pragma solidity ^0.8.23;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title RecipeBook
@@ -14,11 +13,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * with royalties for the original creator.
  */
 contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
-    using Counters for Counters.Counter;
-
     // --- Counters ---
-    Counters.Counter private _recipeIdCounter;
-    Counters.Counter private _tokenIdCounter;
+    uint256 private _recipeIdCounter;
+    uint256 private _tokenIdCounter;
 
     // --- Constants ---
     uint256 public constant MAX_ROYALTY_PERCENT = 20; // 20%
@@ -88,8 +85,8 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
      * @dev Submits a new recipe.
      */
     function submitRecipe(string memory _title, string memory _ingredients, string memory _instructions, string memory _imageURL) public returns (uint256) {
-        _recipeIdCounter.increment();
-        uint256 newId = _recipeIdCounter.current();
+        _recipeIdCounter++;
+        uint256 newId = _recipeIdCounter;
         
         recipes[newId] = RecipeData({
             id: newId,
@@ -136,8 +133,8 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         require(_royaltyPercent <= MAX_ROYALTY_PERCENT, "Royalty too high");
         require(msg.value >= _mintPrice, "Insufficient payment");
         
-        _tokenIdCounter.increment();
-        uint256 newTokenId = _tokenIdCounter.current();
+        _tokenIdCounter++;
+        uint256 newTokenId = _tokenIdCounter;
         
         _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
@@ -168,8 +165,8 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
             
             uint256 refund = msg.value - _mintPrice;
             if (refund > 0) {
-                (bool success, ) = payable(msg.sender).call{value: refund}("");
-                require(success, "Refund failed");
+                (bool refundSuccess, ) = payable(msg.sender).call{value: refund}("");
+                require(refundSuccess, "Refund failed");
             }
         }
         
@@ -237,18 +234,18 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         _transfer(seller, msg.sender, _tokenId);
         
         if (royaltyAmount > 0) {
-            (bool success, ) = payable(metadata.creator).call{value: royaltyAmount}("");
-            require(success, "Royalty transfer failed");
+            (bool royaltySuccess, ) = payable(metadata.creator).call{value: royaltyAmount}("");
+            require(royaltySuccess, "Royalty transfer failed");
             emit RoyaltyPaid(metadata.creator, royaltyAmount, _tokenId);
         }
         
         if (platformFeeAmount > 0) {
-            (bool success, ) = payable(feeRecipient).call{value: platformFeeAmount}("");
-            require(success, "Platform fee transfer failed");
+            (bool feeSuccess, ) = payable(feeRecipient).call{value: platformFeeAmount}("");
+            require(feeSuccess, "Platform fee transfer failed");
         }
         
-        (bool success, ) = payable(seller).call{value: sellerAmount}("");
-        require(success, "Seller payment failed");
+        (bool sellerSuccess, ) = payable(seller).call{value: sellerAmount}("");
+        require(sellerSuccess, "Seller payment failed");
         
         if (msg.value > salePrice) {
             (bool refundSuccess, ) = payable(msg.sender).call{value: msg.value - salePrice}("");
@@ -278,24 +275,28 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
         
         uint256[] memory result = new uint256[](tokenCount);
-        uint256 totalTokens = _tokenIdCounter.current();
+        uint256 totalTokens = _tokenIdCounter;
         uint256 resultIndex = 0;
         
         for (uint256 i = 1; i <= totalTokens; i++) {
-            if (_exists(i) && ownerOf(i) == user) {
-                result[resultIndex] = i;
-                resultIndex++;
+            try this.ownerOf(i) returns (address owner) {
+                if (owner == user) {
+                    result[resultIndex] = i;
+                    resultIndex++;
+                }
+            } catch {
+                // Token doesn't exist, skip
             }
         }
         return result;
     }
 
     function getTotalRecipes() public view returns (uint256) {
-        return _recipeIdCounter.current();
+        return _recipeIdCounter;
     }
 
     function getTotalNFTs() public view returns (uint256) {
-        return _tokenIdCounter.current();
+        return _tokenIdCounter;
     }
 
     // --- Admin Functions ---
@@ -340,10 +341,11 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Cleans up storage associated with a token when it's burned.
+     * @dev Custom burn function that cleans up associated storage.
+     * Note: This doesn't override the internal _burn but provides a public burn interface.
      */
-    function _burn(uint256 tokenId) internal override {
-        super._burn(tokenId);
+    function burn(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender || getApproved(tokenId) == msg.sender || isApprovedForAll(ownerOf(tokenId), msg.sender), "Not authorized to burn");
         
         RecipeNFTMetadata storage metadata = nftMetadata[tokenId];
         if (metadata.isForSale) {
@@ -358,10 +360,13 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
         
         delete nftMetadata[tokenId];
+        
+        // Call the parent burn function
+        _burn(tokenId);
     }
     
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        _requireOwned(tokenId);
         return super.tokenURI(tokenId);
     }
     

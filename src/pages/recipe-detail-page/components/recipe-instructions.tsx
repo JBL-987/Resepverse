@@ -12,7 +12,7 @@ interface RecipeInstructionsProps {
 }
 
 const RecipeInstructions = ({ recipe }: RecipeInstructionsProps) => {
-  const instructions = JSON.parse(recipe.instructions || "[]");
+  const instructions = recipe.instructions || [];
 
   return (
     <Card>

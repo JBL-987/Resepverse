@@ -1,6 +1,9 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
 module.exports = buildModule("RecipeBookModule", (m) => {
-  const recipebook = m.contract("RecipeBook");
+  const feeRecipient = m.getParameter("feeRecipient",
+    "0x0000000000000000000000000000000000000000"); 
+  const initialPlatformFeeBps = m.getParameter("initialPlatformFeeBps", 250); 
+  const recipebook = m.contract("RecipeBook", [feeRecipient, initialPlatformFeeBps]);
   return { recipebook };
 });

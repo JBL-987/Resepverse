@@ -2,8 +2,8 @@ export interface Recipe {
   id: string;
   creator: string;
   title: string;
-  ingredients: string;
-  instructions: string;
+  ingredients: string[];
+  instructions: string[];
   imageURL: string;
   votes: number;
   timestamp: string;
