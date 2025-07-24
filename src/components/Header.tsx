@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, User, Star } from 'lucide-react';
 import { ConnectButton } from "@xellar/kit";
+import { useAuth } from "../contexts/AuthContext";
 import { truncateAddress } from "../utils/strings";
 import { useReadContract } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
@@ -36,6 +37,8 @@ const ConnectedButton: React.FC<{ address: Address; onClick: () => void }> = ({ 
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const showSearch = location.pathname === '/marketplace';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,18 +51,20 @@ const Header = () => {
             <span className="text-2xl font-bold text-foreground">ResepVerse</span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search recipes, chefs, or cuisines..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-muted/50 border-0 focus:bg-background transition-colors"
-              />
+          {showSearch && (
+            <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search recipes, chefs, or cuisines..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-muted/50 border-0 focus:bg-background transition-colors"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center space-x-4">
             <Button variant="outline" className="hidden md:flex" asChild>
@@ -72,18 +77,7 @@ const Header = () => {
                 Mint NFT
               </Link>
             </Button>
-            <ConnectButton.Custom>
-              {({ openConnectModal, isConnected, openProfileModal, account }) => {
-                if (!isConnected) {
-                  return (
-                    <button className="bg-white text-black px-4 py-2 rounded-lg cursor-pointer" onClick={openConnectModal}>
-                      Connect Wallet
-                    </button>
-                  );
-                }
-                return <ConnectedButton address={account?.address as Address} onClick={openProfileModal} />;
-              }}
-            </ConnectButton.Custom>
+            <AuthButtons />
           </div>
         </div>
       </div>
@@ -92,3 +86,22 @@ const Header = () => {
 };
 
 export default Header;
+
+const AuthButtons = () => {
+  const { isAuthenticated, address, disconnect } = useAuth();
+
+  return (
+    <ConnectButton.Custom>
+      {({ openConnectModal, isConnected }) => {
+        if (!isConnected || !isAuthenticated) {
+          return (
+            <button className="bg-white text-black px-4 py-2 rounded-lg cursor-pointer" onClick={openConnectModal}>
+              Connect Wallet
+            </button>
+          );
+        }
+        return <ConnectedButton address={address as Address} onClick={disconnect} />;
+      }}
+    </ConnectButton.Custom>
+  );
+};
