@@ -60,25 +60,25 @@ const RecipeCard = ({ recipe }: RecipeCardProps) => {
           }`}
         />
         <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
+          <Badge variant="secondary" className="bg-gray-900/80 backdrop-blur-sm text-white border-gray-700">
             Medium
           </Badge>
         </div>
       </div>
 
       <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+        <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-white">
           {recipe.title}
         </h3>
 
         <div className="flex items-center space-x-2 mb-3">
-          <User className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Chef {recipe.creator}
+          <User className="w-4 h-4 text-gray-400" />
+          <span className="text-sm text-gray-400">
+            Chef {recipe.creator.slice(0, 6)}...{recipe.creator.slice(-4)}
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-gray-400">
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
             <span>{recipe.votes}</span>
@@ -92,11 +92,11 @@ const RecipeCard = ({ recipe }: RecipeCardProps) => {
 
       <CardFooter className="p-4 pt-0 flex gap-2">
         <Link to={`/recipe/${recipe.id}`} className="flex-1">
-          <Button className="w-full bg-primary hover:bg-primary/90">
+          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
             View Recipe
           </Button>
         </Link>
-        <Button variant="outline" size="icon" onClick={handleVote}>
+        <Button variant="outline" size="icon" className="border-gray-700 bg-gray-800 text-white hover:bg-orange-500 hover:border-orange-500" onClick={handleVote}>
           <ThumbsUp className="h-4 w-4" />
         </Button>
       </CardFooter>

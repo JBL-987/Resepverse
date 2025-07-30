@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Recipe, RecipeInput } from '@/types/recipe';
-import { readContract, writeContract } from '@wagmi/core';
-import { config } from '@/provider';
-import RecipeBook from "./../../smartcontract/artifacts/contracts/RecipeBook.sol/RecipeBook.json";
-import { RECIPE_BOOK_ADDRESS } from '@/constants';
+import { getAllRecipes, getRecipe, submitRecipe, voteRecipe } from '@/lib/liskClient';
 
 interface RecipeStore {
   recipes: Recipe[];
@@ -17,18 +14,6 @@ interface RecipeStore {
   vote: (recipeId: string, account: `0x${string}`, chain: any) => Promise<void>;
 }
 
-function parseRecipe(contractRecipe: any): Recipe {
-    return {
-        id: contractRecipe.id.toString(),
-        creator: contractRecipe.creator,
-        title: contractRecipe.title,
-        ingredients: JSON.parse(contractRecipe.ingredients || "[]"),
-        instructions: JSON.parse(contractRecipe.instructions || "[]"),
-        imageURL: contractRecipe.imageURL,
-        votes: Number(contractRecipe.votes),
-        timestamp: new Date(Number(contractRecipe.timestamp) * 1000).toISOString(),
-    };
-}
 
 export const useRecipeStore = create<RecipeStore>()(
   devtools(
@@ -41,12 +26,7 @@ export const useRecipeStore = create<RecipeStore>()(
       fetchRecipes: async () => {
         try {
           set({ isLoading: true, error: null });
-          const contractRecipes = await readContract(config, {
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'getAllRecipes',
-          });
-          const recipes = (contractRecipes as any[]).map(parseRecipe);
+          const recipes = await getAllRecipes();
           set({ recipes, isLoading: false });
         } catch (error) {
           console.error('Error fetching recipes:', error);
@@ -60,13 +40,7 @@ export const useRecipeStore = create<RecipeStore>()(
       getRecipe: async (id: string) => {
         try {
           set({ isLoading: true, error: null });
-          const contractRecipe = await readContract(config, {
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'getRecipe',
-            args: [id],
-          });
-          const recipe = parseRecipe(contractRecipe);
+          const recipe = await getRecipe(id);
           set({ selectedRecipe: recipe, isLoading: false });
         } catch (error) {
           console.error('Error fetching recipe:', error);
@@ -80,22 +54,10 @@ export const useRecipeStore = create<RecipeStore>()(
       addRecipe: async (recipeData: RecipeInput, account: `0x${string}`, chain: any) => {
         try {
           set({ isLoading: true, error: null });
-          const recipeId = await writeContract(config, {
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'submitRecipe',
-            args: [
-                recipeData.title,
-                JSON.stringify(recipeData.ingredients),
-                JSON.stringify(recipeData.instructions),
-                recipeData.imageURL
-            ],
-            account,
-            chain,
-          });
+          const recipeId = await submitRecipe(recipeData, account, chain);
           await get().fetchRecipes();
           set({ isLoading: false });
-          return recipeId.toString();
+          return recipeId;
         } catch (error) {
           console.error('Error adding recipe:', error);
           set({
@@ -109,14 +71,7 @@ export const useRecipeStore = create<RecipeStore>()(
       vote: async (recipeId: string, account: `0x${string}`, chain: any) => {
         try {
           set({ error: null });
-          await writeContract(config, {
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'voteRecipe',
-            args: [recipeId],
-            account,
-            chain,
-          });
+          await voteRecipe(recipeId, account, chain);
           await get().fetchRecipes();
         } catch (error) {
           console.error('Error voting recipe:', error);

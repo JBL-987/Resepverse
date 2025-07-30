@@ -1,21 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { useRecipeStore } from '../store/recipestore';
+import {
+  getUserProfile,
+  createUserProfile,
+  updateUserPreferences as updateBlockchainPreferences,
+  completeOnboarding as completeBlockchainOnboarding,
+  FrontendUserProfile
+} from '../services/blockchain';
 
-// User Profile interface (simplified for blockchain focus)
-interface UserProfile {
-  id: string;
-  address: string;
-  reputation: number;
-  recipesCreated: number;
-  votesReceived: number;
-  isOnboarded: boolean;
-  preferences: {
-    agentEnabled: boolean;
-    notifications: boolean;
-    theme: 'light' | 'dark';
-  };
-}
+// Use the interface from blockchain service
+type UserProfile = FrontendUserProfile;
 
 // Context type
 interface UserContextType {
@@ -44,6 +39,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   
   // Wagmi hooks
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   
   // Recipe store
   const { fetchRecipes } = useRecipeStore();
@@ -58,85 +54,102 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setLoading(false);
   }, [isConnected, address]);
 
-  // Initialize user profile
-  const initializeUser = (walletAddress: string) => {
+  // Initialize user profile from blockchain
+  const initializeUser = async (walletAddress: string) => {
     try {
       setError(null);
+      setLoading(true);
       
-      // Get user data from localStorage or create new profile
-      const storedUser = localStorage.getItem(`user_${walletAddress}`);
+      // Get user data from blockchain
+      const blockchainUser = await getUserProfile(walletAddress);
       
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+      if (blockchainUser) {
+        setUser(blockchainUser);
       } else {
-        // Create new user profile
-        const newUser: UserProfile = {
-          id: walletAddress,
-          address: walletAddress,
-          reputation: 0,
-          recipesCreated: 0,
-          votesReceived: 0,
-          isOnboarded: false,
-          preferences: {
-            agentEnabled: true,
-            notifications: true,
-            theme: 'light'
-          }
-        };
+        // Create new user profile on blockchain
+        const success = await createUserProfile(walletAddress as `0x${string}`, { id: chainId });
         
-        setUser(newUser);
-        saveUserToStorage(newUser);
+        if (success) {
+          // Fetch the newly created profile
+          const newUser = await getUserProfile(walletAddress);
+          if (newUser) {
+            setUser(newUser);
+          } else {
+            throw new Error('Failed to fetch newly created profile');
+          }
+        } else {
+          throw new Error('Failed to create user profile on blockchain');
+        }
       }
     } catch (error) {
       setError('Failed to initialize user profile');
       console.error('Error initializing user:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Save user to localStorage
-  const saveUserToStorage = (userData: UserProfile) => {
+  // Complete onboarding on blockchain
+  const completeOnboarding = async (): Promise<void> => {
+    if (!user || !address) return;
+    
     try {
-      localStorage.setItem(`user_${userData.address}`, JSON.stringify(userData));
+      setError(null);
+      const success = await completeBlockchainOnboarding(address as `0x${string}`, { id: chainId });
+      
+      if (success) {
+        // Refresh user data from blockchain
+        await refreshUserData();
+      } else {
+        throw new Error('Failed to complete onboarding on blockchain');
+      }
     } catch (error) {
-      console.error('Error saving user to storage:', error);
+      setError('Failed to complete onboarding');
+      console.error('Error completing onboarding:', error);
     }
   };
 
-  // Complete onboarding
-  const completeOnboarding = (): void => {
-    if (!user) return;
+  // Update user preferences on blockchain
+  const updateUserPreferences = async (preferences: Partial<UserProfile['preferences']>): Promise<void> => {
+    if (!user || !address) return;
     
-    const updatedUser = { ...user, isOnboarded: true };
-    setUser(updatedUser);
-    saveUserToStorage(updatedUser);
-  };
-
-  // Update user preferences
-  const updateUserPreferences = (preferences: Partial<UserProfile['preferences']>): void => {
-    if (!user) return;
-    
-    const updatedUser = { 
-      ...user, 
-      preferences: { ...user.preferences, ...preferences } 
-    };
-    
-    setUser(updatedUser);
-    saveUserToStorage(updatedUser);
+    try {
+      setError(null);
+      const updatedPreferences = { ...user.preferences, ...preferences };
+      
+      const success = await updateBlockchainPreferences(
+        updatedPreferences,
+        address as `0x${string}`,
+        { id: chainId }
+      );
+      
+      if (success) {
+        // Refresh user data from blockchain
+        await refreshUserData();
+      } else {
+        throw new Error('Failed to update preferences on blockchain');
+      }
+    } catch (error) {
+      setError('Failed to update user preferences');
+      console.error('Error updating user preferences:', error);
+    }
   };
 
   // Refresh user data from blockchain
   const refreshUserData = async (): Promise<void> => {
-    if (!user || !isConnected) return;
+    if (!address || !isConnected) return;
     
     try {
       setError(null);
       
+      // Refresh user profile from blockchain
+      const updatedUser = await getUserProfile(address);
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+      
       // Refresh store data which will update reputation
       await fetchRecipes();
-      
-      // You can add more blockchain data fetching here
-      // For example: recipes created count, votes received, etc.
       
     } catch (error) {
       setError('Failed to refresh user data');

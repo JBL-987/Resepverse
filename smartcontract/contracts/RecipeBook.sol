@@ -27,6 +27,19 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     address public feeRecipient;
 
     // --- Data Structures ---
+    struct UserProfile {
+        address userAddress;
+        uint256 reputation;
+        uint256 recipesCreated;
+        uint256 votesReceived;
+        bool isOnboarded;
+        bool agentEnabled;
+        bool notifications;
+        uint8 theme; // 0 = light, 1 = dark
+        uint256 createdAt;
+        uint256 updatedAt;
+    }
+
     struct RecipeData {
         uint256 id;
         address creator;
@@ -56,6 +69,10 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     mapping(uint256 => RecipeNFTMetadata) public nftMetadata; // tokenId => metadata
     mapping(uint256 => uint256) public recipeToNFT; // recipeId => tokenId
 
+    // --- User Profile Management ---
+    mapping(address => UserProfile) public userProfiles;
+    mapping(address => bool) public userExists;
+
     // --- Gas-efficient NFT Sale Listing ---
     uint256[] private _nftsForSale;
     mapping(uint256 => uint256) private _nftForSaleIndex; // tokenId => index in _nftsForSale
@@ -65,6 +82,8 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     mapping(address => uint256) public userReputation;
 
     // --- Events ---
+    event UserProfileCreated(address indexed user, uint256 timestamp);
+    event UserProfileUpdated(address indexed user, uint256 timestamp);
     event RecipeSubmitted(address indexed creator, uint256 recipeId, string title);
     event RecipeVoted(address indexed voter, uint256 recipeId);
     event NFTMinted(address indexed creator, uint256 indexed tokenId, uint256 indexed recipeId, uint256 mintPrice);
@@ -79,12 +98,88 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         setPlatformFee(_initialPlatformFeeBps);
     }
 
+    // --- User Profile Functions ---
+
+    /**
+     * @dev Creates or initializes a user profile.
+     */
+    function createUserProfile() public returns (bool) {
+        if (userExists[msg.sender]) {
+            return false; // User already exists
+        }
+
+        userProfiles[msg.sender] = UserProfile({
+            userAddress: msg.sender,
+            reputation: 0,
+            recipesCreated: 0,
+            votesReceived: 0,
+            isOnboarded: false,
+            agentEnabled: true,
+            notifications: true,
+            theme: 0, // light theme by default
+            createdAt: block.timestamp,
+            updatedAt: block.timestamp
+        });
+
+        userExists[msg.sender] = true;
+        emit UserProfileCreated(msg.sender, block.timestamp);
+        return true;
+    }
+
+    /**
+     * @dev Updates user preferences.
+     */
+    function updateUserPreferences(bool _agentEnabled, bool _notifications, uint8 _theme) public {
+        require(userExists[msg.sender], "User profile does not exist");
+        require(_theme <= 1, "Invalid theme value");
+
+        UserProfile storage profile = userProfiles[msg.sender];
+        profile.agentEnabled = _agentEnabled;
+        profile.notifications = _notifications;
+        profile.theme = _theme;
+        profile.updatedAt = block.timestamp;
+
+        emit UserProfileUpdated(msg.sender, block.timestamp);
+    }
+
+    /**
+     * @dev Completes user onboarding.
+     */
+    function completeOnboarding() public {
+        require(userExists[msg.sender], "User profile does not exist");
+        
+        UserProfile storage profile = userProfiles[msg.sender];
+        profile.isOnboarded = true;
+        profile.updatedAt = block.timestamp;
+
+        emit UserProfileUpdated(msg.sender, block.timestamp);
+    }
+
+    /**
+     * @dev Gets user profile data.
+     */
+    function getUserProfile(address _user) public view returns (UserProfile memory) {
+        require(userExists[_user], "User profile does not exist");
+        return userProfiles[_user];
+    }
+
+    /**
+     * @dev Checks if user profile exists.
+     */
+    function doesUserExist(address _user) public view returns (bool) {
+        return userExists[_user];
+    }
+
     // --- Recipe Functions ---
 
     /**
      * @dev Submits a new recipe.
      */
     function submitRecipe(string memory _title, string memory _ingredients, string memory _instructions, string memory _imageURL) public returns (uint256) {
+        // Auto-create user profile if it doesn't exist
+        if (!userExists[msg.sender]) {
+            createUserProfile();
+        }
         _recipeIdCounter++;
         uint256 newId = _recipeIdCounter;
         
@@ -100,6 +195,10 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
             isNFT: false,
             nftTokenId: 0
         });
+
+        // Update user's recipe count
+        userProfiles[msg.sender].recipesCreated++;
+        userProfiles[msg.sender].updatedAt = block.timestamp;
         
         emit RecipeSubmitted(msg.sender, newId, _title);
         return newId;
@@ -115,7 +214,15 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         recipes[_recipeId].votes++;
         hasVoted[_recipeId][msg.sender] = true;
         
-        userReputation[recipes[_recipeId].creator]++;
+        // Update creator's reputation and votes received
+        address creator = recipes[_recipeId].creator;
+        userReputation[creator]++;
+        
+        if (userExists[creator]) {
+            userProfiles[creator].reputation++;
+            userProfiles[creator].votesReceived++;
+            userProfiles[creator].updatedAt = block.timestamp;
+        }
         
         emit RecipeVoted(msg.sender, _recipeId);
     }
@@ -297,6 +404,20 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     function getTotalNFTs() public view returns (uint256) {
         return _tokenIdCounter;
+    }
+
+    /**
+     * @dev Returns all recipes (for backward compatibility)
+     */
+    function getAllRecipes() public view returns (RecipeData[] memory) {
+        uint256 totalRecipes = _recipeIdCounter;
+        RecipeData[] memory allRecipes = new RecipeData[](totalRecipes);
+        
+        for (uint256 i = 1; i <= totalRecipes; i++) {
+            allRecipes[i - 1] = recipes[i];
+        }
+        
+        return allRecipes;
     }
 
     // --- Admin Functions ---

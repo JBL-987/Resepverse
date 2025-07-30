@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, User, Star } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { ConnectButton } from "@xellar/kit";
 import { useAuth } from "../contexts/AuthContext";
 import { truncateAddress } from "../utils/strings";
@@ -41,42 +41,33 @@ const Header = () => {
   const showSearch = location.pathname === '/marketplace';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-400 rounded-xl flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">R</span>
             </div>
-            <span className="text-2xl font-bold text-foreground">ResepVerse</span>
+            <span className="text-2xl font-bold text-white">ResepVerse</span>
           </Link>
 
           {showSearch && (
             <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search recipes, chefs, or cuisines..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-muted/50 border-0 focus:bg-background transition-colors"
+                  className="pl-10 bg-gray-900/50 border border-gray-800 focus:bg-gray-900 focus:border-orange-500 transition-colors text-white placeholder:text-gray-400"
                 />
               </div>
             </div>
           )}
 
           <div className="flex items-center space-x-4">
-            <Button variant="outline" className="hidden md:flex" asChild>
-              <Link to="/become-chef">
-                Become a Chef
-              </Link>
-            </Button>
-            <Button variant="outline" className="hidden md:flex" asChild>
-              <Link to="/nft-minting">
-                Mint NFT
-              </Link>
-            </Button>
+            <AuthenticatedButtons />
             <AuthButtons />
           </div>
         </div>
@@ -87,6 +78,29 @@ const Header = () => {
 
 export default Header;
 
+const AuthenticatedButtons = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <>
+      <Button variant="outline" className="hidden md:flex border-gray-700 bg-gray-900 text-white hover:bg-orange-500 hover:border-orange-500 hover:text-white" asChild>
+        <Link to="/become-chef">
+          Become a Chef
+        </Link>
+      </Button>
+      <Button variant="outline" className="hidden md:flex border-gray-700 bg-gray-900 text-white hover:bg-orange-500 hover:border-orange-500 hover:text-white" asChild>
+        <Link to="/nft-minting">
+          Mint NFT
+        </Link>
+      </Button>
+    </>
+  );
+};
+
 const AuthButtons = () => {
   const { isAuthenticated, address, disconnect } = useAuth();
 
@@ -95,7 +109,7 @@ const AuthButtons = () => {
       {({ openConnectModal, isConnected }) => {
         if (!isConnected || !isAuthenticated) {
           return (
-            <button className="bg-white text-black px-4 py-2 rounded-lg cursor-pointer" onClick={openConnectModal}>
+            <button className="bg-orange-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-600 transition-colors" onClick={openConnectModal}>
               Connect Wallet
             </button>
           );
