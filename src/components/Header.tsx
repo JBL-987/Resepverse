@@ -9,6 +9,7 @@ import { truncateAddress } from "../utils/strings";
 import { useReadContract } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
 import { IDRX_SEPOLIA } from "../constants";
+import logo from '/images/logo.png';
 
 const ConnectedButton: React.FC<{ address: Address; onClick: () => void }> = ({ address, onClick }) => {
   const { data } = useReadContract({
@@ -38,17 +39,14 @@ const ConnectedButton: React.FC<{ address: Address; onClick: () => void }> = ({ 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
-  const showSearch = location.pathname === '/marketplace';
+  const showSearch = false; // Marketplace page tidak ada
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-400 rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">R</span>
-            </div>
-            <span className="text-2xl font-bold text-white">ResepVerse</span>
+            <img src={logo} alt="Logo" className="h-14 w-14" />
           </Link>
 
           {showSearch && (
@@ -93,8 +91,18 @@ const AuthenticatedButtons = () => {
         </Link>
       </Button>
       <Button variant="outline" className="hidden md:flex border-gray-700 bg-gray-900 text-white hover:bg-orange-500 hover:border-orange-500 hover:text-white" asChild>
+        <Link to="/leaderboard">
+          Leaderboard
+        </Link>
+      </Button>
+      <Button variant="outline" className="hidden md:flex border-gray-700 bg-gray-900 text-white hover:bg-orange-500 hover:border-orange-500 hover:text-white" asChild>
         <Link to="/nft-minting">
           Mint NFT
+        </Link>
+      </Button>
+      <Button variant="outline" className="hidden md:flex border-gray-700 bg-gray-900 text-white hover:bg-orange-500 hover:border-orange-500 hover:text-white" asChild>
+        <Link to="/my-nfts">
+          My NFTs
         </Link>
       </Button>
     </>

@@ -80,21 +80,26 @@ const NftCard = ({ tokenId, refetchNfts }: NftCardProps) => {
   };
 
   return (
-    <Card>
+    <Card className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-orange-500/30 transition-all duration-500 overflow-hidden">
         {recipe && (
-            <img src={(recipe as any).imageURL} alt={(recipe as any).title} className="w-full h-48 object-cover" />
+            <div className="relative">
+              <img src={(recipe as any).imageURL} alt={(recipe as any).title} className="w-full h-48 object-cover" />
+              <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                NFT #{tokenId.toString()}
+              </div>
+            </div>
         )}
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2">
-          {recipe ? (recipe as any).title : `Token ID: ${tokenId.toString()}`}
+      <CardContent className="p-4 text-white">
+        <h3 className="font-semibold text-lg mb-2 text-orange-400">
+          {recipe ? (recipe as any).title : `Recipe NFT #${tokenId.toString()}`}
         </h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-400">
             Token ID: {tokenId.toString()}
         </p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+      <CardFooter className="p-4 pt-0 flex flex-col gap-2 bg-gray-900/30">
         <div className="w-full">
-          <Label htmlFor={`price-${tokenId.toString()}`}>Sale Price ($LSK)</Label>
+          <Label htmlFor={`price-${tokenId.toString()}`} className="text-orange-400">Sale Price ($LSK)</Label>
           <Input
             id={`price-${tokenId.toString()}`}
             type="number"
@@ -102,10 +107,11 @@ const NftCard = ({ tokenId, refetchNfts }: NftCardProps) => {
             step="0.01"
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
+            className="bg-gray-800/50 border-gray-700 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-300 text-white"
           />
         </div>
         <Button
-          className="w-full"
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
           onClick={handleListForSale}
         >
           List for Sale

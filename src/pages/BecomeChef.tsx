@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,10 +12,11 @@ import Header from '@/components/Header';
 import { useRecipeStore } from '@/store/recipestore';
 import Swal from 'sweetalert2';
 import { useWriteContract, useAccount, usePublicClient } from 'wagmi';
-import { resepverseABI } from '@/utils/abi'; // Updated import to use the new ABI
+import { resepverseABI } from '@/utils/abi'; 
 import { RECIPE_BOOK_ADDRESS } from '@/constants';
 
 const BecomeChef = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -119,12 +121,17 @@ const BecomeChef = () => {
         background: '#1f2937',
         color: '#ffffff',
         confirmButtonColor: '#f97316',
-        confirmButtonText: '🚀 Start Cooking!',
+        confirmButtonText: '🚀 View My Profile!',
         showClass: {
           popup: 'animate__animated animate__fadeInUp'
         },
         hideClass: {
           popup: 'animate__animated animate__fadeOutDown'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          localStorage.setItem(`chef_profile_${account}`, JSON.stringify(formData));
+          navigate(`/chef/${account}`);
         }
       });
 

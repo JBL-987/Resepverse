@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,10 +8,11 @@ import Index from "./pages/Index";
 import BecomeChef from "./pages/BecomeChef";
 import NFTMinting from "./pages/NFTMinting";
 import NotFound from "./pages/NotFound";
-import RecipeDetailPage from "./pages/recipe-detail-page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MyNfts from "./pages/MyNfts";
 import Marketplace from "./pages/Marketplace";
+import ChefProfile from "./pages/ChefProfile";
+import Leaderboard from "./pages/Leaderboard";
 
 const queryClient = new QueryClient();
 
@@ -24,13 +24,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route element={<ProtectedRoute />}>
+            <Route element={<ProtectedRoute />}>
             <Route path="/main" element={<Index />} />
             <Route path="/become-chef" element={<BecomeChef />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/nft-minting" element={<NFTMinting />} />
             <Route path="/my-nfts" element={<MyNfts />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+            <Route path="/chef/:id" element={<ChefProfile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

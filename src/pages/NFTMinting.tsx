@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Star, Clock, Coins, Award, Image, FileText, Sparkles, Zap, TrendingUp, Gem } from 'lucide-react';
 import Header from '@/components/Header';
 import { useWriteContract, useAccount, usePublicClient } from 'wagmi';
@@ -119,7 +120,7 @@ const NFTMinting = () => {
         await fetchRecipes();
 
         // Show success alert with transaction details
-        await Swal.fire({
+        const result = await Swal.fire({
           title: '🎉 NFT Minted Successfully!',
           html: `
             <div class="text-center">
@@ -134,7 +135,10 @@ const NFTMinting = () => {
           background: '#1f2937',
           color: '#ffffff',
           confirmButtonColor: '#f97316',
-          confirmButtonText: '🚀 View in Marketplace',
+          confirmButtonText: '🚀 View My NFTs',
+          showDenyButton: true,
+          denyButtonText: 'Stay Here',
+          denyButtonColor: '#374151',
           showClass: {
             popup: 'animate__animated animate__zoomIn'
           },
@@ -142,6 +146,11 @@ const NFTMinting = () => {
             popup: 'animate__animated animate__zoomOut'
           }
         });
+        
+        // Redirect to My NFTs page if user clicks the confirm button
+        if (result.isConfirmed) {
+          window.location.href = '/my-nfts';
+        }
 
         // Reset form
         setMintData({
@@ -276,19 +285,24 @@ const NFTMinting = () => {
                         <Label htmlFor="category" className="text-white group-focus-within:text-orange-400 transition-colors duration-300">
                           Category *
                         </Label>
-                        <select
-                          id="category"
-                          name="category"
-                          value={mintData.category}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-800/50 text-white focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-300"
-                          required
+                        <Select 
+                          value={mintData.category} 
+                          onValueChange={(value) => {
+                            setMintData({
+                              ...mintData,
+                              category: value
+                            });
+                          }}
                         >
-                          <option value="">Select category</option>
-                          {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="bg-gray-800/50 border-gray-700 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-300">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-700">
+                            {categories.map(cat => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="group">
                         <Label htmlFor="cookTime" className="text-white group-focus-within:text-orange-400 transition-colors duration-300">
@@ -309,19 +323,24 @@ const NFTMinting = () => {
                         <Label htmlFor="difficulty" className="text-white group-focus-within:text-orange-400 transition-colors duration-300">
                           Difficulty *
                         </Label>
-                        <select
-                          id="difficulty"
-                          name="difficulty"
-                          value={mintData.difficulty}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-800/50 text-white focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-300"
-                          required
+                        <Select 
+                          value={mintData.difficulty} 
+                          onValueChange={(value) => {
+                            setMintData({
+                              ...mintData,
+                              difficulty: value
+                            });
+                          }}
                         >
-                          <option value="">Select difficulty</option>
-                          <option value="Easy">Easy</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Hard">Hard</option>
-                        </select>
+                          <SelectTrigger className="bg-gray-800/50 border-gray-700 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-300">
+                            <SelectValue placeholder="Select difficulty" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-700">
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 

@@ -7,14 +7,11 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title RecipeBook
- * @dev A smart contract for creating, sharing, and trading recipes as NFTs.
- * It allows users to submit recipes, vote on them, and mint them as unique NFTs.
- * These NFTs can then be listed for sale and traded on a secondary market,
- * with royalties for the original creator.
+ * @dev A smart contract for creating chef profiles and minting recipe NFTs for free.
+ * NFTs can be traded on a secondary market with royalties for the original creator.
  */
 contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     // --- Counters ---
-    uint256 private _recipeIdCounter;
     uint256 private _tokenIdCounter;
 
     // --- Constants ---
@@ -27,10 +24,13 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     address public feeRecipient;
 
     // --- Data Structures ---
-    struct UserProfile {
-        address userAddress;
+    struct ChefProfile {
+        address chefAddress;
+        string name;
+        string bio;
+        string profileImageURL;
         uint256 reputation;
-        uint256 recipesCreated;
+        uint256 nftsCreated;
         uint256 votesReceived;
         bool isOnboarded;
         bool agentEnabled;
@@ -40,38 +40,24 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         uint256 updatedAt;
     }
 
-    struct RecipeData {
-        uint256 id;
+    struct RecipeNFTMetadata {
         address creator;
         string title;
         string ingredients;
         string instructions;
         string imageURL;
-        uint256 votes;
-        uint256 timestamp;
-        bool isNFT;
-        uint256 nftTokenId;
-    }
-
-    struct RecipeNFTMetadata {
-        uint256 recipeId;
-        address creator;
-        uint256 mintPrice;
-        uint256 royaltyPercent; // Royalty in percentage (e.g., 5 for 5%)
         string description;
+        uint256 votes;
+        uint256 royaltyPercent; // Royalty in percentage (e.g., 5 for 5%)
         uint256 mintedAt;
         bool isForSale;
         uint256 salePrice;
     }
 
     // --- Mappings and Arrays ---
-    mapping(uint256 => RecipeData) public recipes;
     mapping(uint256 => RecipeNFTMetadata) public nftMetadata; // tokenId => metadata
-    mapping(uint256 => uint256) public recipeToNFT; // recipeId => tokenId
-
-    // --- User Profile Management ---
-    mapping(address => UserProfile) public userProfiles;
-    mapping(address => bool) public userExists;
+    mapping(address => ChefProfile) public chefProfiles;
+    mapping(address => bool) public chefExists;
 
     // --- Gas-efficient NFT Sale Listing ---
     uint256[] private _nftsForSale;
@@ -79,39 +65,48 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     // --- Voting & Reputation ---
     mapping(uint256 => mapping(address => bool)) public hasVoted;
-    mapping(address => uint256) public userReputation;
+    mapping(address => uint256) public chefReputation;
 
     // --- Events ---
-    event UserProfileCreated(address indexed user, uint256 timestamp);
-    event UserProfileUpdated(address indexed user, uint256 timestamp);
-    event RecipeSubmitted(address indexed creator, uint256 recipeId, string title);
-    event RecipeVoted(address indexed voter, uint256 recipeId);
-    event NFTMinted(address indexed creator, uint256 indexed tokenId, uint256 indexed recipeId, uint256 mintPrice);
+    event ChefProfileCreated(address indexed chef, string name, uint256 timestamp);
+    event ChefProfileUpdated(address indexed chef, uint256 timestamp);
+    event RecipeNFTMinted(address indexed creator, uint256 indexed tokenId, string title);
+    event RecipeVoted(address indexed voter, uint256 indexed tokenId);
     event NFTSold(address indexed seller, address indexed buyer, uint256 indexed tokenId, uint256 price);
     event NFTListedForSale(address indexed owner, uint256 indexed tokenId, uint256 price);
     event NFTRemovedFromSale(address indexed owner, uint256 indexed tokenId);
     event RoyaltyPaid(address indexed recipient, uint256 amount, uint256 indexed tokenId);
 
     // --- Constructor ---
-    constructor(address _feeRecipient, uint256 _initialPlatformFeeBps) ERC721("Recipe Book NFT", "RECIPE") Ownable(msg.sender) {
+    constructor(address _feeRecipient, uint256 _initialPlatformFeeBps) 
+        ERC721("Recipe Book NFT", "RECIPE") 
+        Ownable(msg.sender) 
+    {
         feeRecipient = _feeRecipient != address(0) ? _feeRecipient : msg.sender;
         setPlatformFee(_initialPlatformFeeBps);
     }
 
-    // --- User Profile Functions ---
+    // --- Chef Profile Functions ---
 
     /**
-     * @dev Creates or initializes a user profile.
+     * @dev Creates a chef profile - FREE
      */
-    function createUserProfile() public returns (bool) {
-        if (userExists[msg.sender]) {
-            return false; // User already exists
+    function createChefProfile(
+        string memory _name,
+        string memory _bio,
+        string memory _profileImageURL
+    ) public returns (bool) {
+        if (chefExists[msg.sender]) {
+            return false; // Chef already exists
         }
 
-        userProfiles[msg.sender] = UserProfile({
-            userAddress: msg.sender,
+        chefProfiles[msg.sender] = ChefProfile({
+            chefAddress: msg.sender,
+            name: _name,
+            bio: _bio,
+            profileImageURL: _profileImageURL,
             reputation: 0,
-            recipesCreated: 0,
+            nftsCreated: 0,
             votesReceived: 0,
             isOnboarded: false,
             agentEnabled: true,
@@ -121,124 +116,98 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
             updatedAt: block.timestamp
         });
 
-        userExists[msg.sender] = true;
-        emit UserProfileCreated(msg.sender, block.timestamp);
+        chefExists[msg.sender] = true;
+        emit ChefProfileCreated(msg.sender, _name, block.timestamp);
         return true;
     }
 
     /**
-     * @dev Updates user preferences.
+     * @dev Updates chef profile information
      */
-    function updateUserPreferences(bool _agentEnabled, bool _notifications, uint8 _theme) public {
-        require(userExists[msg.sender], "User profile does not exist");
+    function updateChefProfile(
+        string memory _name,
+        string memory _bio,
+        string memory _profileImageURL
+    ) public {
+        require(chefExists[msg.sender], "Chef profile does not exist");
+
+        ChefProfile storage profile = chefProfiles[msg.sender];
+        profile.name = _name;
+        profile.bio = _bio;
+        profile.profileImageURL = _profileImageURL;
+        profile.updatedAt = block.timestamp;
+
+        emit ChefProfileUpdated(msg.sender, block.timestamp);
+    }
+
+    /**
+     * @dev Updates chef preferences
+     */
+    function updateChefPreferences(
+        bool _agentEnabled, 
+        bool _notifications, 
+        uint8 _theme
+    ) public {
+        require(chefExists[msg.sender], "Chef profile does not exist");
         require(_theme <= 1, "Invalid theme value");
 
-        UserProfile storage profile = userProfiles[msg.sender];
+        ChefProfile storage profile = chefProfiles[msg.sender];
         profile.agentEnabled = _agentEnabled;
         profile.notifications = _notifications;
         profile.theme = _theme;
         profile.updatedAt = block.timestamp;
 
-        emit UserProfileUpdated(msg.sender, block.timestamp);
+        emit ChefProfileUpdated(msg.sender, block.timestamp);
     }
 
     /**
-     * @dev Completes user onboarding.
+     * @dev Completes chef onboarding
      */
     function completeOnboarding() public {
-        require(userExists[msg.sender], "User profile does not exist");
+        require(chefExists[msg.sender], "Chef profile does not exist");
         
-        UserProfile storage profile = userProfiles[msg.sender];
+        ChefProfile storage profile = chefProfiles[msg.sender];
         profile.isOnboarded = true;
         profile.updatedAt = block.timestamp;
 
-        emit UserProfileUpdated(msg.sender, block.timestamp);
+        emit ChefProfileUpdated(msg.sender, block.timestamp);
     }
 
     /**
-     * @dev Gets user profile data.
+     * @dev Gets chef profile data
      */
-    function getUserProfile(address _user) public view returns (UserProfile memory) {
-        require(userExists[_user], "User profile does not exist");
-        return userProfiles[_user];
+    function getChefProfile(address _chef) public view returns (ChefProfile memory) {
+        require(chefExists[_chef], "Chef profile does not exist");
+        return chefProfiles[_chef];
     }
 
     /**
-     * @dev Checks if user profile exists.
+     * @dev Checks if chef profile exists
      */
-    function doesUserExist(address _user) public view returns (bool) {
-        return userExists[_user];
+    function doesChefExist(address _chef) public view returns (bool) {
+        return chefExists[_chef];
     }
 
-    // --- Recipe Functions ---
+    // --- Recipe NFT Functions ---
 
     /**
-     * @dev Submits a new recipe.
+     * @dev Mints a recipe NFT - FREE (no payment required)
      */
-    function submitRecipe(string memory _title, string memory _ingredients, string memory _instructions, string memory _imageURL) public returns (uint256) {
-        // Auto-create user profile if it doesn't exist
-        if (!userExists[msg.sender]) {
-            createUserProfile();
+    function mintRecipeNFT(
+        string memory _title,
+        string memory _ingredients,
+        string memory _instructions,
+        string memory _imageURL,
+        string memory _description,
+        string memory _tokenURI,
+        uint256 _royaltyPercent
+    ) public nonReentrant returns (uint256) {
+        // Auto-create chef profile if it doesn't exist
+        if (!chefExists[msg.sender]) {
+            createChefProfile("Anonymous Chef", "", "");
         }
-        _recipeIdCounter++;
-        uint256 newId = _recipeIdCounter;
-        
-        recipes[newId] = RecipeData({
-            id: newId,
-            creator: msg.sender,
-            title: _title,
-            ingredients: _ingredients,
-            instructions: _instructions,
-            imageURL: _imageURL,
-            votes: 0,
-            timestamp: block.timestamp,
-            isNFT: false,
-            nftTokenId: 0
-        });
 
-        // Update user's recipe count
-        userProfiles[msg.sender].recipesCreated++;
-        userProfiles[msg.sender].updatedAt = block.timestamp;
-        
-        emit RecipeSubmitted(msg.sender, newId, _title);
-        return newId;
-    }
-
-    /**
-     * @dev Allows a user to vote for a recipe, increasing the creator's reputation.
-     */
-    function voteRecipe(uint256 _recipeId) public {
-        require(recipes[_recipeId].id != 0, "Invalid recipe id");
-        require(!hasVoted[_recipeId][msg.sender], "Already voted");
-        
-        recipes[_recipeId].votes++;
-        hasVoted[_recipeId][msg.sender] = true;
-        
-        // Update creator's reputation and votes received
-        address creator = recipes[_recipeId].creator;
-        userReputation[creator]++;
-        
-        if (userExists[creator]) {
-            userProfiles[creator].reputation++;
-            userProfiles[creator].votesReceived++;
-            userProfiles[creator].updatedAt = block.timestamp;
-        }
-        
-        emit RecipeVoted(msg.sender, _recipeId);
-    }
-
-    // --- NFT Functions ---
-
-    /**
-     * @dev Mints a recipe into an NFT. Can only be called by the recipe creator.
-     */
-    function mintRecipeNFT(uint256 _recipeId, uint256 _mintPrice, uint256 _royaltyPercent, string memory _description, string memory _tokenURI) public payable nonReentrant returns (uint256) {
-        RecipeData storage recipe = recipes[_recipeId];
-        require(recipe.id != 0, "Invalid recipe id");
-        require(recipe.creator == msg.sender, "Not recipe creator");
-        require(!recipe.isNFT, "Recipe already minted as NFT");
         require(_royaltyPercent <= MAX_ROYALTY_PERCENT, "Royalty too high");
-        require(msg.value >= _mintPrice, "Insufficient payment");
         
         _tokenIdCounter++;
         uint256 newTokenId = _tokenIdCounter;
@@ -246,43 +215,53 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         
-        recipe.isNFT = true;
-        recipe.nftTokenId = newTokenId;
-        
         nftMetadata[newTokenId] = RecipeNFTMetadata({
-            recipeId: _recipeId,
             creator: msg.sender,
-            mintPrice: _mintPrice,
-            royaltyPercent: _royaltyPercent,
+            title: _title,
+            ingredients: _ingredients,
+            instructions: _instructions,
+            imageURL: _imageURL,
             description: _description,
+            votes: 0,
+            royaltyPercent: _royaltyPercent,
             mintedAt: block.timestamp,
             isForSale: false,
             salePrice: 0
         });
         
-        recipeToNFT[_recipeId] = newTokenId;
+        // Update chef's NFT count
+        chefProfiles[msg.sender].nftsCreated++;
+        chefProfiles[msg.sender].updatedAt = block.timestamp;
         
-        // Handle payment distribution
-        if (msg.value > 0) {
-            uint256 fee = (_mintPrice * platformFeeBps) / BPS_DIVISOR;
-            if (fee > 0) {
-                (bool success, ) = payable(feeRecipient).call{value: fee}("");
-                require(success, "Fee transfer failed");
-            }
-            
-            uint256 refund = msg.value - _mintPrice;
-            if (refund > 0) {
-                (bool refundSuccess, ) = payable(msg.sender).call{value: refund}("");
-                require(refundSuccess, "Refund failed");
-            }
-        }
-        
-        emit NFTMinted(msg.sender, newTokenId, _recipeId, _mintPrice);
+        emit RecipeNFTMinted(msg.sender, newTokenId, _title);
         return newTokenId;
     }
 
     /**
-     * @dev Lists an NFT for sale.
+     * @dev Allows a user to vote for a recipe NFT, increasing the creator's reputation
+     */
+    function voteRecipeNFT(uint256 _tokenId) public {
+        require(_ownerOf(_tokenId) != address(0), "Invalid token id");
+        require(!hasVoted[_tokenId][msg.sender], "Already voted");
+        
+        nftMetadata[_tokenId].votes++;
+        hasVoted[_tokenId][msg.sender] = true;
+        
+        // Update creator's reputation and votes received
+        address creator = nftMetadata[_tokenId].creator;
+        chefReputation[creator]++;
+        
+        if (chefExists[creator]) {
+            chefProfiles[creator].reputation++;
+            chefProfiles[creator].votesReceived++;
+            chefProfiles[creator].updatedAt = block.timestamp;
+        }
+        
+        emit RecipeVoted(msg.sender, _tokenId);
+    }
+
+    /**
+     * @dev Lists an NFT for sale
      */
     function listNFTForSale(uint256 _tokenId, uint256 _price) public {
         require(ownerOf(_tokenId) == msg.sender, "Not token owner");
@@ -300,7 +279,7 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Removes an NFT from sale.
+     * @dev Removes an NFT from sale
      */
     function removeNFTFromSale(uint256 _tokenId) public {
         require(ownerOf(_tokenId) == msg.sender, "Not token owner");
@@ -317,7 +296,7 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Buys an NFT that is listed for sale.
+     * @dev Buys an NFT that is listed for sale
      */
     function buyNFT(uint256 _tokenId) public payable nonReentrant {
         RecipeNFTMetadata storage metadata = nftMetadata[_tokenId];
@@ -365,15 +344,14 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     // --- View Functions ---
 
     /**
-     * @dev Returns all NFTs currently listed for sale. (Gas-efficient)
+     * @dev Returns all NFTs currently listed for sale
      */
     function getNFTsForSale() public view returns (uint256[] memory) {
         return _nftsForSale;
     }
 
     /**
-     * @notice This function can be gas-intensive if the user owns many NFTs.
-     * @dev For production, consider off-chain indexing or inheriting from ERC721Enumerable.
+     * @dev Gets all NFTs owned by a specific user
      */
     function getUserNFTs(address user) public view returns (uint256[] memory) {
         uint256 tokenCount = balanceOf(user);
@@ -398,26 +376,24 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         return result;
     }
 
-    function getTotalRecipes() public view returns (uint256) {
-        return _recipeIdCounter;
+    /**
+     * @dev Gets all NFTs with their metadata (for browsing)
+     */
+    function getAllNFTs() public view returns (uint256[] memory tokenIds, RecipeNFTMetadata[] memory metadata) {
+        uint256 totalNFTs = _tokenIdCounter;
+        tokenIds = new uint256[](totalNFTs);
+        metadata = new RecipeNFTMetadata[](totalNFTs);
+        
+        for (uint256 i = 1; i <= totalNFTs; i++) {
+            tokenIds[i - 1] = i;
+            metadata[i - 1] = nftMetadata[i];
+        }
+        
+        return (tokenIds, metadata);
     }
 
     function getTotalNFTs() public view returns (uint256) {
         return _tokenIdCounter;
-    }
-
-    /**
-     * @dev Returns all recipes (for backward compatibility)
-     */
-    function getAllRecipes() public view returns (RecipeData[] memory) {
-        uint256 totalRecipes = _recipeIdCounter;
-        RecipeData[] memory allRecipes = new RecipeData[](totalRecipes);
-        
-        for (uint256 i = 1; i <= totalRecipes; i++) {
-            allRecipes[i - 1] = recipes[i];
-        }
-        
-        return allRecipes;
     }
 
     // --- Admin Functions ---
@@ -437,10 +413,10 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         require(success, "Emergency withdrawal failed");
     }
 
-    // --- Internal & Overrides ---
+    // --- Internal Functions ---
 
     /**
-     * @dev Adds a token to the gas-efficient sale list.
+     * @dev Adds a token to the gas-efficient sale list
      */
     function _addNFTToForSaleList(uint256 tokenId) private {
         _nftsForSale.push(tokenId);
@@ -448,7 +424,7 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Removes a token from the gas-efficient sale list.
+     * @dev Removes a token from the gas-efficient sale list
      */
     function _removeNFTFromForSaleList(uint256 tokenId) private {
         uint256 index = _nftForSaleIndex[tokenId];
@@ -462,8 +438,7 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Custom burn function that cleans up associated storage.
-     * Note: This doesn't override the internal _burn but provides a public burn interface.
+     * @dev Custom burn function that cleans up associated storage
      */
     function burn(uint256 tokenId) public {
         require(ownerOf(tokenId) == msg.sender || getApproved(tokenId) == msg.sender || isApprovedForAll(ownerOf(tokenId), msg.sender), "Not authorized to burn");
@@ -471,13 +446,6 @@ contract RecipeBook is ERC721URIStorage, Ownable, ReentrancyGuard {
         RecipeNFTMetadata storage metadata = nftMetadata[tokenId];
         if (metadata.isForSale) {
             _removeNFTFromForSaleList(tokenId);
-        }
-        
-        uint256 recipeId = metadata.recipeId;
-        if (recipeId != 0) {
-            recipes[recipeId].isNFT = false;
-            recipes[recipeId].nftTokenId = 0;
-            delete recipeToNFT[recipeId];
         }
         
         delete nftMetadata[tokenId];
