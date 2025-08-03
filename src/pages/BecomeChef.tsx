@@ -40,151 +40,173 @@ const BecomeChef = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      if (!account) {
-        await Swal.fire({
-          title: '🔗 Wallet Not Connected',
-          text: 'Please connect your wallet to become a chef.',
-          icon: 'warning',
-          background: '#1f2937',
-          color: '#ffffff',
-          confirmButtonColor: '#f97316',
-          confirmButtonText: 'OK'
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Step 1: Create user profile on blockchain
-      const createProfileTxHash = await writeContractAsync({
-        abi: resepverseABI,
-        address: RECIPE_BOOK_ADDRESS as `0x${string}`,
-        functionName: 'createUserProfile',
-        args: [],
-      } as any);
-
-      // Wait for transaction confirmation
-      const createProfileReceipt = await publicClient.waitForTransactionReceipt({ 
-        hash: createProfileTxHash 
-      });
-
-      // Check if the transaction was successful
-      if (createProfileReceipt.status !== 'success') {
-        throw new Error('Profile creation transaction failed');
-      }
-
-      // Step 2: Complete onboarding
-      const onboardingTxHash = await writeContractAsync({
-        abi: resepverseABI,
-        address: RECIPE_BOOK_ADDRESS as `0x${string}`,
-        functionName: 'completeOnboarding',
-        args: [],
-      } as any);
-
-      // Wait for onboarding transaction confirmation
-      const onboardingReceipt = await publicClient.waitForTransactionReceipt({ 
-        hash: onboardingTxHash 
-      });
-
-      // Check if the onboarding transaction was successful
-      if (onboardingReceipt.status !== 'success') {
-        throw new Error('Onboarding transaction failed');
-      }
-
-      // Add chef as a recipe creator to the store so they can be searched
-      const newChefRecipe = {
-        title: `${formData.specialties} Specialties by ${formData.name}`,
-        ingredients: ['Professional chef specialties', 'Years of experience: ' + formData.experience],
-        instructions: [formData.bio, 'Contact: ' + formData.email],
-        imageURL: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400',
-        description: formData.bio
-      };
-
-      await addRecipe(newChefRecipe, account, chain);
-
-      // Show success alert with blockchain details
+  try {
+    if (!account) {
       await Swal.fire({
-        title: '🎉 Welcome to ResepVerse!',
-        html: `
-          <div class="text-center">
-            <div class="text-6xl mb-4">👨‍🍳</div>
-            <p class="text-lg mb-2">Chef ${formData.name || 'Profile'} created successfully!</p>
-            <p class="text-sm text-gray-400 mb-2">Profile Transaction: ${createProfileTxHash.slice(0, 10)}...${createProfileTxHash.slice(-8)}</p>
-            <p class="text-sm text-gray-400 mb-2">Onboarding Transaction: ${onboardingTxHash.slice(0, 10)}...${onboardingTxHash.slice(-8)}</p>
-            <p class="text-sm text-gray-400">Your chef profile is now on the blockchain!</p>
-          </div>
-        `,
-        icon: 'success',
+        title: '🔗 Wallet Not Connected',
+        text: 'Please connect your wallet to become a chef.',
+        icon: 'warning',
         background: '#1f2937',
         color: '#ffffff',
         confirmButtonColor: '#f97316',
-        confirmButtonText: '🚀 View My Profile!',
-        showClass: {
-          popup: 'animate__animated animate__fadeInUp'
-        },
-        hideClass: {
-          popup: 'animate__animated animate__fadeOutDown'
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          localStorage.setItem(`chef_profile_${account}`, JSON.stringify(formData));
-          navigate(`/chef/${account}`);
-        }
+        confirmButtonText: 'OK'
       });
+      setIsSubmitting(false);
+      return;
+    }
 
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        experience: '',
-        specialties: '',
-        bio: '',
-        portfolio: ''
-      });
-
-    } catch (error: any) {
-      console.error('Chef registration error:', error);
-      
-      let errorMessage = 'There was an error creating your chef profile. Please try again.';
-      
-      // Handle specific error types
-      if (error.message?.includes('User rejected') || error.message?.includes('rejected')) {
-        errorMessage = 'Transaction was cancelled by user.';
-      } else if (error.message?.includes('User profile does not exist')) {
-        errorMessage = 'User profile validation failed. Please try again.';
-      } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'Insufficient funds to complete the transaction.';
-      } else if (error.message?.includes('network') || error.message?.includes('Network')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message?.includes('gas')) {
-        errorMessage = 'Transaction failed due to gas issues. Please try again with higher gas limit.';
-      } else if (error.message?.includes('execution reverted')) {
-        // Handle contract revert errors
-        if (error.reason) {
-          errorMessage = `Contract error: ${error.reason}`;
-        } else {
-          errorMessage = 'Contract execution failed. Please try again.';
-        }
-      }
-      
-      // Show error alert
+    // Validate required fields
+    if (!formData.name || !formData.bio) {
       await Swal.fire({
-        title: '❌ Registration Failed',
-        text: errorMessage,
+        title: '❌ Missing Information',
+        text: 'Please fill in your name and bio to continue.',
         icon: 'error',
         background: '#1f2937',
         color: '#ffffff',
         confirmButtonColor: '#f97316',
-        confirmButtonText: 'Try Again'
+        confirmButtonText: 'OK'
       });
-    } finally {
       setIsSubmitting(false);
+      return;
     }
-  };
+
+    // Default profile image if not provided
+    const profileImageURL = formData.portfolio || 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400';
+
+    // Step 1: Create user profile on blockchain
+    const createProfileTxHash = await writeContractAsync({
+      abi: resepverseABI,
+      address: RECIPE_BOOK_ADDRESS as `0x${string}`,
+      functionName: 'createChefProfile',
+      args: [
+        formData.name,           // _name
+        formData.bio,            // _bio  
+        profileImageURL          // _profileImageURL
+      ],
+    } as any);
+
+    // Wait for transaction confirmation
+    const createProfileReceipt = await publicClient.waitForTransactionReceipt({ 
+      hash: createProfileTxHash 
+    });
+
+    // Check if the transaction was successful
+    if (createProfileReceipt.status !== 'success') {
+      throw new Error('Profile creation transaction failed');
+    }
+
+    // Step 2: Complete onboarding (this function takes no parameters)
+    const onboardingTxHash = await writeContractAsync({
+      abi: resepverseABI,
+      address: RECIPE_BOOK_ADDRESS as `0x${string}`,
+      functionName: 'completeOnboarding',
+      args: [], // This function correctly takes no parameters
+    } as any);
+
+    // Wait for onboarding transaction confirmation
+    const onboardingReceipt = await publicClient.waitForTransactionReceipt({ 
+      hash: onboardingTxHash 
+    });
+
+    // Check if the onboarding transaction was successful
+    if (onboardingReceipt.status !== 'success') {
+      throw new Error('Onboarding transaction failed');
+    }
+
+    // Add chef as a recipe creator to the store so they can be searched
+    const newChefRecipe = {
+      title: `${formData.specialties} Specialties by ${formData.name}`,
+      ingredients: ['Professional chef specialties', 'Years of experience: ' + formData.experience],
+      instructions: [formData.bio, 'Contact: ' + formData.email],
+      imageURL: profileImageURL,
+      description: formData.bio
+    };
+
+    await addRecipe(newChefRecipe, account, chain);
+
+    // Show success alert with blockchain details
+    await Swal.fire({
+      title: '🎉 Welcome to ResepVerse!',
+      html: `
+        <div class="text-center">
+          <div class="text-6xl mb-4">👨‍🍳</div>
+          <p class="text-lg mb-2">Chef ${formData.name || 'Profile'} created successfully!</p>
+          <p class="text-sm text-gray-400 mb-2">Profile Transaction: ${createProfileTxHash.slice(0, 10)}...${createProfileTxHash.slice(-8)}</p>
+          <p class="text-sm text-gray-400 mb-2">Onboarding Transaction: ${onboardingTxHash.slice(0, 10)}...${onboardingTxHash.slice(-8)}</p>
+          <p class="text-sm text-gray-400">Your chef profile is now on the blockchain!</p>
+        </div>
+      `,
+      icon: 'success',
+      background: '#1f2937',
+      color: '#ffffff',
+      confirmButtonColor: '#f97316',
+      confirmButtonText: '🚀 View My Profile!',
+      showClass: {
+        popup: 'animate__animated animate__fadeInUp'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOutDown'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.setItem(`chef_profile_${account}`, JSON.stringify(formData));
+        navigate(`/chef/${account}`);
+      }
+    });
+
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      experience: '',
+      specialties: '',
+      bio: '',
+      portfolio: ''
+    });
+
+  } catch (error: any) {
+    console.error('Chef registration error:', error);
+    
+    let errorMessage = 'There was an error creating your chef profile. Please try again.';
+    
+    // Handle specific error types
+    if (error.message?.includes('User rejected') || error.message?.includes('rejected')) {
+      errorMessage = 'Transaction was cancelled by user.';
+    } else if (error.message?.includes('User profile does not exist')) {
+      errorMessage = 'User profile validation failed. Please try again.';
+    } else if (error.message?.includes('insufficient funds')) {
+      errorMessage = 'Insufficient funds to complete the transaction.';
+    } else if (error.message?.includes('network') || error.message?.includes('Network')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.message?.includes('gas')) {
+      errorMessage = 'Transaction failed due to gas issues. Please try again with higher gas limit.';
+    } else if (error.message?.includes('execution reverted')) {
+      // Handle contract revert errors
+      if (error.reason) {
+        errorMessage = `Contract error: ${error.reason}`;
+      } else {
+        errorMessage = 'Contract execution failed. Please try again.';
+      }
+    }
+    
+    // Show error alert
+    await Swal.fire({
+      title: '❌ Registration Failed',
+      text: errorMessage,
+      icon: 'error',
+      background: '#1f2937',
+      color: '#ffffff',
+      confirmButtonColor: '#f97316',
+      confirmButtonText: 'Try Again'
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const benefits = [
     {

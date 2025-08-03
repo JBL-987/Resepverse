@@ -11,7 +11,7 @@ import Header from '@/components/Header';
 import { useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { parseEther, parseEventLogs } from 'viem';
 import { useToast } from '@/components/ui/use-toast';
-import RecipeBook from "./../../smartcontract/artifacts/contracts/RecipeBook.sol/RecipeBook.json";
+import { resepverseABI } from '@/utils/abi';
 import { RECIPE_BOOK_ADDRESS } from '@/constants';
 import { useRecipeStore } from '@/store/recipestore';
 import Swal from 'sweetalert2';
@@ -43,162 +43,160 @@ const NFTMinting = () => {
   };
 
   const handleMint = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsMinting(true);
-    
-    try {
-        if (!account) {
-          await Swal.fire({
-            title: '🔗 Wallet Not Connected',
-            text: 'Please connect your wallet to mint NFTs.',
-            icon: 'warning',
-            background: '#1f2937',
-            color: '#ffffff',
-            confirmButtonColor: '#f97316',
-            confirmButtonText: 'OK'
-          });
-          setIsMinting(false);
-          return;
-        }
-
-        // Step 1: Submit Recipe to Blockchain
-        const submitTxHash = await writeContractAsync({
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'submitRecipe',
-            args: [
-                mintData.title,
-                JSON.stringify(mintData.ingredients.split('\n').filter(item => item.trim() !== '')),
-                JSON.stringify(mintData.instructions.split('\n').filter(item => item.trim() !== '')),
-                "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400" // Recipe image
-            ],
-            account,
-            chain,
-        });
-
-        // Wait for transaction confirmation
-        const transactionReceipt = await publicClient.waitForTransactionReceipt({ hash: submitTxHash });
-        
-        // Parse the RecipeSubmitted event to get the recipe ID
-        const logs = parseEventLogs({
-            abi: RecipeBook.abi,
-            logs: transactionReceipt.logs,
-            eventName: 'RecipeSubmitted'
-        });
-        const recipeId = (logs[0] as any).args.recipeId;
-
-        // Step 2: Mint the Recipe as NFT
-        const mintPrice = parseEther(mintData.price);
-        const mintTxHash = await writeContractAsync({
-            abi: RecipeBook.abi,
-            address: RECIPE_BOOK_ADDRESS,
-            functionName: 'mintRecipeNFT',
-            args: [
-                recipeId,
-                mintPrice,
-                parseInt(mintData.royalty),
-                mintData.description,
-                `https://resepverse.com/nft/${recipeId}`, // Token URI
-            ],
-            value: mintPrice, // This is the actual payment - user pays the mint price
-            account,
-            chain,
-        });
-
-        // Wait for minting transaction confirmation
-        const mintReceipt = await publicClient.waitForTransactionReceipt({ hash: mintTxHash });
-        
-        // Parse the NFTMinted event to get the token ID
-        const mintLogs = parseEventLogs({
-            abi: RecipeBook.abi,
-            logs: mintReceipt.logs,
-            eventName: 'NFTMinted'
-        });
-        const tokenId = (mintLogs[0] as any).args.tokenId;
-
-        // Refresh the recipes list to include the new NFT recipe
-        await fetchRecipes();
-
-        // Show success alert with transaction details
-        const result = await Swal.fire({
-          title: '🎉 NFT Minted Successfully!',
-          html: `
-            <div class="text-center">
-              <div class="text-6xl mb-4">💎</div>
-              <p class="text-lg mb-2">Your recipe "<strong>${mintData.title}</strong>" has been minted as NFT #${tokenId}!</p>
-              <p class="text-sm text-gray-400 mb-2">Recipe ID: ${recipeId}</p>
-              <p class="text-sm text-gray-400 mb-2">Transaction Hash: ${mintTxHash.slice(0, 10)}...${mintTxHash.slice(-8)}</p>
-              <p class="text-sm text-gray-400">It's now available for trading and can be found in search results.</p>
-            </div>
-          `,
-          icon: 'success',
+  e.preventDefault();
+  setIsMinting(true);
+  
+  try {
+      if (!account) {
+        await Swal.fire({
+          title: '🔗 Wallet Not Connected',
+          text: 'Please connect your wallet to mint NFTs.',
+          icon: 'warning',
           background: '#1f2937',
           color: '#ffffff',
           confirmButtonColor: '#f97316',
-          confirmButtonText: '🚀 View My NFTs',
-          showDenyButton: true,
-          denyButtonText: 'Stay Here',
-          denyButtonColor: '#374151',
-          showClass: {
-            popup: 'animate__animated animate__zoomIn'
-          },
-          hideClass: {
-            popup: 'animate__animated animate__zoomOut'
-          }
+          confirmButtonText: 'OK'
         });
-        
-        // Redirect to My NFTs page if user clicks the confirm button
-        if (result.isConfirmed) {
-          window.location.href = '/my-nfts';
-        }
-
-        // Reset form
-        setMintData({
-          title: '',
-          description: '',
-          category: '',
-          cookTime: '',
-          difficulty: '',
-          price: '0.1',
-          royalty: '5',
-          ingredients: '',
-          instructions: ''
-        });
-
-    } catch (error: any) {
-      console.error('Minting error:', error);
-      
-      let errorMessage = 'There was an error minting your recipe NFT. Please try again.';
-      
-      // Handle specific error types
-      if (error.message?.includes('User rejected')) {
-        errorMessage = 'Transaction was cancelled by user.';
-      } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'Insufficient funds to complete the transaction.';
-      } else if (error.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message?.includes('Recipe already minted as NFT')) {
-        errorMessage = 'This recipe has already been minted as an NFT.';
-      } else if (error.message?.includes('Not recipe creator')) {
-        errorMessage = 'Only the recipe creator can mint it as an NFT.';
-      } else if (error.message?.includes('Royalty too high')) {
-        errorMessage = 'Royalty percentage must be 20% or less.';
+        setIsMinting(false);
+        return;
       }
+
+      // Validate required fields
+      if (!mintData.title || !mintData.description || !mintData.ingredients || !mintData.instructions) {
+        await Swal.fire({
+          title: '❌ Missing Information',
+          text: 'Please fill in all required fields.',
+          icon: 'error',
+          background: '#1f2937',
+          color: '#ffffff',
+          confirmButtonColor: '#f97316',
+          confirmButtonText: 'OK'
+        });
+        setIsMinting(false);
+        return;
+      }
+
+      // Prepare ingredients and instructions as JSON strings
+      const ingredientsArray = mintData.ingredients.split('\n').filter(item => item.trim() !== '');
+      const instructionsArray = mintData.instructions.split('\n').filter(item => item.trim() !== '');
       
-      // Show error alert
-      await Swal.fire({
-        title: '❌ Minting Failed',
-        text: errorMessage,
-        icon: 'error',
+      // Default image URL
+      const imageURL = "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400";
+      
+      // Create token URI (this would typically point to metadata JSON)
+      const tokenURI = `https://resepverse.com/nft/metadata/${Date.now()}`;
+
+      // Mint the Recipe NFT directly (based on your current ABI)
+      const mintTxHash = await writeContractAsync({
+          abi: resepverseABI, // Use the correct ABI
+          address: RECIPE_BOOK_ADDRESS as `0x${string}`,
+          functionName: 'mintRecipeNFT',
+          args: [
+              mintData.title,                                    // _title
+              JSON.stringify(ingredientsArray),                  // _ingredients
+              JSON.stringify(instructionsArray),                 // _instructions
+              imageURL,                                          // _imageURL
+              mintData.description,                              // _description
+              tokenURI,                                          // _tokenURI
+              BigInt(parseInt(mintData.royalty))                         // _royaltyPercent
+          ],
+          account,
+          chain,
+      });
+
+      // Wait for minting transaction confirmation
+      const mintReceipt = await publicClient.waitForTransactionReceipt({ hash: mintTxHash });
+      
+      // Parse the RecipeNFTMinted event to get the token ID
+      const mintLogs = parseEventLogs({
+          abi: resepverseABI,
+          logs: mintReceipt.logs,
+          eventName: 'RecipeNFTMinted'
+      });
+      const tokenId = (mintLogs[0] as any).args.tokenId;
+
+      // Refresh the recipes list to include the new NFT recipe
+      await fetchRecipes();
+
+      // Show success alert with transaction details
+      const result = await Swal.fire({
+        title: '🎉 NFT Minted Successfully!',
+        html: `
+          <div class="text-center">
+            <div class="text-6xl mb-4">💎</div>
+            <p class="text-lg mb-2">Your recipe "<strong>${mintData.title}</strong>" has been minted as NFT #${tokenId}!</p>
+            <p class="text-sm text-gray-400 mb-2">Transaction Hash: ${mintTxHash.slice(0, 10)}...${mintTxHash.slice(-8)}</p>
+            <p class="text-sm text-gray-400">It's now available for trading and can be found in search results.</p>
+          </div>
+        `,
+        icon: 'success',
         background: '#1f2937',
         color: '#ffffff',
         confirmButtonColor: '#f97316',
-        confirmButtonText: 'Try Again'
+        confirmButtonText: '🚀 View My NFTs',
+        showDenyButton: true,
+        denyButtonText: 'Stay Here',
+        denyButtonColor: '#374151',
+        showClass: {
+          popup: 'animate__animated animate__zoomIn'
+        },
+        hideClass: {
+          popup: 'animate__animated animate__zoomOut'
+        }
       });
-    } finally {
-      setIsMinting(false);
+      
+      // Redirect to My NFTs page if user clicks the confirm button
+      if (result.isConfirmed) {
+        window.location.href = '/my-nfts';
+      }
+
+      // Reset form
+      setMintData({
+        title: '',
+        description: '',
+        category: '',
+        cookTime: '',
+        difficulty: '',
+        price: '0.1',
+        royalty: '5',
+        ingredients: '',
+        instructions: ''
+      });
+
+  } catch (error: any) {
+    console.error('Minting error:', error);
+    
+    let errorMessage = 'There was an error minting your recipe NFT. Please try again.';
+    
+    // Handle specific error types
+    if (error.message?.includes('User rejected')) {
+      errorMessage = 'Transaction was cancelled by user.';
+    } else if (error.message?.includes('insufficient funds')) {
+      errorMessage = 'Insufficient funds to complete the transaction.';
+    } else if (error.message?.includes('network')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.message?.includes('Recipe already minted as NFT')) {
+      errorMessage = 'This recipe has already been minted as an NFT.';
+    } else if (error.message?.includes('Not recipe creator')) {
+      errorMessage = 'Only the recipe creator can mint it as an NFT.';
+    } else if (error.message?.includes('Royalty too high')) {
+      errorMessage = 'Royalty percentage must be 20% or less.';
     }
-  };
+    
+    // Show error alert
+    await Swal.fire({
+      title: '❌ Minting Failed',
+      text: errorMessage,
+      icon: 'error',
+      background: '#1f2937',
+      color: '#ffffff',
+      confirmButtonColor: '#f97316',
+      confirmButtonText: 'Try Again'
+    });
+  } finally {
+    setIsMinting(false);
+  }
+};
 
   const categories = [
     'Italian', 'Asian', 'Mexican', 'French', 'Indian', 'Mediterranean',
