@@ -74,8 +74,8 @@
       "artifacts": []
     },
     "D:\\Documents\\Code\\Hackathon\\Resepverse\\smartcontract\\contracts\\RecipeBook.sol": {
-      "lastModificationDate": 1753860359325,
-      "contentHash": "0731b04d5b7bbee47f400dd20e4e3b5d",
+      "lastModificationDate": 1754092567564,
+      "contentHash": "0a6a6afa1c58a9fdf5505759395571bc",
       "sourceName": "contracts/RecipeBook.sol",
       "solcConfig": {
         "version": "0.8.23",
